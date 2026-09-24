@@ -6,15 +6,25 @@
   "type": "object",
   "required": ["id", "src", "width", "height"],
   "properties": {
-    "id":     { "type": "string", "pattern": "^[A-Za-z0-9_-]{1,64}$", "readOnly": true },
-    "src":    { "type": "string", "pattern": "^(/uploads/[A-Za-z0-9_-]+\\.(avif|webp)|https://dl\\.polyhaven\\.org/.+)$", "readOnly": true, "description": "/uploads/<id>.avif — varianta mare, max 2560px pe latura lungă." },
-    "sm":     { "type": "string", "pattern": "^/uploads/[A-Za-z0-9_-]+\\.sm\\.webp$", "readOnly": true, "description": "/uploads/<id>.sm.webp — miniatura (720px)." },
-    "width":  { "type": "integer", "minimum": 1, "readOnly": true },
+    "id": { "type": "string", "pattern": "^[A-Za-z0-9_-]{1,64}$", "readOnly": true },
+    "src": {
+      "type": "string",
+      "pattern": "^(/poze/(?!.*\\.\\.)[A-Za-z0-9_./-]+\\.(avif|webp)(\\?v=[A-Za-z0-9_-]+)?|https://dl\\.polyhaven\\.org/.+)$",
+      "readOnly": true,
+      "description": "/poze/architecture/<proiect>/<n>.avif?v=<id> — varianta mare, max 2560px pe latura lungă. Până la salvare: /poze/_incoming/<id>.avif."
+    },
+    "sm": {
+      "type": "string",
+      "pattern": "^/poze/(?!.*\\.\\.)[A-Za-z0-9_./-]+\\.sm\\.webp(\\?v=[A-Za-z0-9_-]+)?$",
+      "readOnly": true,
+      "description": "Miniatura de 720px, lângă poza mare: <n>.sm.webp."
+    },
+    "width": { "type": "integer", "minimum": 1, "readOnly": true },
     "height": { "type": "integer", "minimum": 1, "readOnly": true },
-    "bytes":  { "type": "integer", "readOnly": true },
+    "bytes": { "type": "integer", "readOnly": true },
     "originalBytes": { "type": "integer", "readOnly": true, "description": "Mărimea fișierului încărcat, înainte de optimizare." },
     "preset": { "type": "boolean", "readOnly": true },
-    "alt":    { "title": "Ce se vede în poză", "type": "string", "maxLength": 200 },
+    "alt": { "title": "Ce se vede în poză", "type": "string", "maxLength": 200 },
     "spaced": { "title": "Spațiu mai mare înainte", "type": "boolean" }
   },
   "additionalProperties": false

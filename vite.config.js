@@ -18,7 +18,7 @@ export default defineConfig({
     resolve: { alias: { '@': path.join(ROOT, 'app/src') } },
     server: {
         port: 5173,
-        proxy: { '/api': API, '/uploads': API, '/preview': API }
+        proxy: { '/api': API, '/poze': API, '/preview': API }
     },
     build: { outDir: path.join(ROOT, 'dist'), emptyOutDir: true }
 });

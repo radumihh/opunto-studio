@@ -11,30 +11,22 @@ npm run dev
 
 Aplicația: http://localhost:5173. API-ul rulează pe :4100.
 
-## Pe un VM (Ubuntu)
+## Pe un VM (Ubuntu) — un singur script
 
-Ai nevoie de Node 20 sau mai nou.
-
-```bash
-sudo useradd -r -m -d /opt/opunto-studio opunto
-sudo -u opunto git clone https://github.com/radumihh/opunto-studio.git /opt/opunto-studio
-cd /opt/opunto-studio
-sudo -u opunto npm run setup                 # npm ci + build
-sudo -u opunto cp .env.example .env          # setează ADMIN_PASSWORD, TRUST_PROXY=1
-sudo cp deploy/opunto-studio.service /etc/systemd/system/
-sudo systemctl daemon-reload && sudo systemctl enable --now opunto-studio
-sudo cp deploy/nginx.conf /etc/nginx/sites-available/opunto-studio   # schimbă server_name
-sudo ln -s /etc/nginx/sites-available/opunto-studio /etc/nginx/sites-enabled/
-sudo nginx -t && sudo systemctl reload nginx && sudo certbot --nginx -d studio.opunto.ro
-```
-
-**Update:**
+Pe un Ubuntu 22.04/24.04 curat, ca root:
 
 ```bash
-git pull && npm run setup && sudo systemctl restart opunto-studio
+curl -fsSL https://raw.githubusercontent.com/radumihh/opunto-studio/main/deploy/install.sh -o install.sh
+sudo ADMIN_PASSWORD='parola-lunga' DOMAIN=studio.opunto.ro EMAIL=tu@opunto.ro bash install.sh
 ```
 
-**Backup:** copiază `data/` și `uploads/`. Din Setări → Backup poți descărca și un JSON cu toate proiectele. La fiecare scriere, versiunea anterioară a bazei rămâne în `data/db.json.bak`.
+Scriptul face tot: actualizează sistemul, instalează Node 22, nginx și firewall-ul (SSH, HTTP, HTTPS), creează utilizatorul `opunto`, clonează repo-ul în `/opt/opunto-studio`, face build-ul și pornește serviciul systemd. La prima instalare aduce și proiectele cu pozele lor din `seed/`. `DOMAIN` și `EMAIL` sunt opționale: cu ele primești HTTPS de la Let's Encrypt, fără ele Studio răspunde pe IP.
+
+**Update:** `sudo bash /opt/opunto-studio/deploy/install.sh`. Aduce codul nou și repornește serviciul. Proiectele, pozele și parolele de pe server rămân neatinse.
+
+**Proiectele din seed:** `npm run snapshot` copiază proiectele și pozele de acum în `seed/`, fără parole. Commit-ul lor intră la următoarea instalare nouă.
+
+**Backup:** copiază `data/` și `poze/`. Din Setări → Backup poți descărca și un JSON cu toate proiectele. La fiecare scriere, versiunea anterioară a bazei rămâne în `data/db.json.bak`.
 
 Dacă `HOST` nu e `127.0.0.1` și nu există o parolă de admin, serverul refuză să pornească.
 
@@ -44,7 +36,8 @@ Dacă `HOST` nu e `127.0.0.1` și nu există o parolă de admin, serverul refuz�
 |---|---|
 | **Proiecte** | Creezi, editezi, duplici și ștergi proiecte. Trage cardurile ca să schimbi ordinea din site. Numărul de pe card e cel de pe site. |
 | **Poze** | Le tragi în pagină sau le alegi din calculator (JPG, PNG, WebP, AVIF, TIFF; max 60 MB/poză). Vezi progresul la fiecare poză și le reordonezi prin drag. Din meniul fiecărei poze alegi coperta, poza de pe card, un spațiu mai mare înainte și textul alt. HEIC-ul de pe iPhone e refuzat cu un mesaj care explică cum îl exporți ca JPG. |
-| **Optimizare** | Fiecare poză devine `uploads/<id>.avif`: maxim 2560px, AVIF la calitate 60, cu ~⅓ mai mic decât un WebP de aceeași calitate. Se generează și `<id>.sm.webp` de 720px pentru miniaturi. Pozele scoase din proiecte se șterg de pe disc. |
+| **Poze pe disc** | Totul stă în `poze/`, lângă server: `poze/architecture/<nume-proiect>/1.avif … n.avif` și `poze/concepts/<nume-proiect>/1.avif …`, numerotate în ordinea din pagină. Texturile materialelor sunt `material-1.avif …`, în folderul proiectului. La reordonare, redenumire sau ștergere, fișierele se renumerotează, se mută sau se șterg singure. Pozele urcate și încă nesalvate așteaptă în `poze/_incoming/`. |
+| **Optimizare** | Fiecare poză devine AVIF: maxim 2560px, calitate 60, cu ~⅓ mai mic decât un WebP de aceeași calitate. Lângă ea stă `<n>.sm.webp` de 720px, pentru miniaturi. Originalul nu se păstrează. |
 | **Materiale (#arch)** | Până la 4 materiale. Textura o tragi peste pătrat, o alegi din calculator sau o iei dintre cele 4 texturi pe care le folosește y-final acum (Granite, Marble, Black oak veneer, Brushed concrete). Totul e opțional: fără materiale, blocul nu apare. |
 | **Preview live** | În dreapta editorului rulează pagina reală a site-ului, la mărimea reală (1440, 1280 sau 390 px). Fiecare modificare apare în ~0.3s, fără reîncărcare, în locul în care ai rămas cu scroll-ul. Sub 1100px lățime, preview-ul se deschide în tab separat. |
 | **Parole** | Parola de intrare în Studio (sesiune de 30 de zile, cu limită de încercări). Separat, o parolă comună pentru proiectele protejate; în fiecare proiect doar o activezi sau o dezactivezi. Modul „Vizitator” din preview arată ecranul de parolă exact cum îl vede publicul. |
@@ -64,7 +57,7 @@ Pornește serverul real pe date temporare și verifică upload-ul, validarea, pu
 server.js              API, poze, preview și aplicația compilată
 lib/config.js          variabilele de mediu (.env)
 lib/store.js           baza de date = data/db.json (scriere atomică, cu .bak)
-lib/images.js          optimizarea pozelor (sharp) și ștergerea celor nefolosite
+lib/images.js          optimizarea pozelor (sharp), așezarea în poze/<site>/<proiect>/ și ștergerea celor nefolosite
 lib/validate.js        validare după schema/*.json, mesaje în română
 lib/lock.js            parole (scrypt), sesiuni, tokenuri, limitarea încercărilor
 lib/defaults.js        categoriile #arch și texturile din y-final

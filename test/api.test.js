@@ -21,7 +21,7 @@ async function start(env = {}) {
     const port = await freePort();
     const child = spawn(process.execPath, ['server.js'], {
         cwd: ROOT,
-        env: { ...process.env, PORT: String(port), HOST: '127.0.0.1', DATA_DIR: path.join(dir, 'data'), UPLOADS_DIR: path.join(dir, 'uploads'), ADMIN_PASSWORD: '', ...env },
+        env: { ...process.env, PORT: String(port), HOST: '127.0.0.1', DATA_DIR: path.join(dir, 'data'), UPLOADS_DIR: path.join(dir, 'poze'), ADMIN_PASSWORD: '', ...env },
         stdio: ['ignore', 'pipe', 'pipe']
     });
     let out = '';
@@ -75,8 +75,8 @@ describe('studio without admin password (local)', () => {
         const f = await fetch(s.base + body[0].src);
         assert.equal(f.status, 200);
         assert.equal(f.headers.get('content-type'), 'image/avif');
-        assert.ok(fs.existsSync(path.join(s.dir, 'uploads', body[0].id + '.sm.webp')));
-        const missing = await fetch(s.base + '/uploads/nothere.avif');
+        assert.ok(fs.existsSync(path.join(s.dir, 'poze', '_incoming', body[0].id + '.sm.webp')));
+        const missing = await fetch(s.base + '/poze/nothere.avif');
         assert.equal(missing.status, 404);
     });
 
@@ -158,23 +158,34 @@ describe('studio without admin password (local)', () => {
         const after = await (await fetch(s.base + '/api/projects?site=arch')).json();
         assert.deepEqual(after.map(x => x.id), ids);
 
-        const file = path.join(s.dir, 'uploads', ups[0].id + '.avif');
+        const orig = path.join(s.dir, 'poze', 'architecture', 'orig', '1.avif');
+        const dup = path.join(s.dir, 'poze', 'architecture', 'orig-copie', '1.avif');
+        assert.equal(saved.photos[0].src, '/poze/architecture/orig/1.avif?v=' + ups[0].id);
+        assert.ok(fs.existsSync(orig) && fs.existsSync(dup), 'the copy has its own folder');
         await fetch(s.base + '/api/projects/' + saved.id, { method: 'DELETE' });
-        assert.ok(fs.existsSync(file), 'image still used by the copy');
+        assert.ok(!fs.existsSync(orig), 'folder removed with its project');
+        assert.ok(fs.existsSync(dup), 'the copy keeps its files');
         await fetch(s.base + '/api/projects/' + copy.id, { method: 'DELETE' });
-        await new Promise(r => setTimeout(r, 200));
-        assert.ok(!fs.existsSync(file), 'image removed with its last project');
+        assert.ok(!fs.existsSync(dup), 'image removed with its last project');
         assert.equal((await fetch(s.base + '/api/projects/' + copy.id)).status, 404);
     });
 
     test('photos taken out of a project are deleted on save', async () => {
         const ups = (await upload(s.base, [await img(), await img()])).body.map(clean);
         const p = await (await fetch(s.base + '/api/projects', json('POST', { site: 'arch' }))).json();
-        const a = await (await fetch(s.base + '/api/projects/' + p.id, json('PUT', { ...p, photos: ups }))).json();
-        await fetch(s.base + '/api/projects/' + p.id, json('PUT', { ...a, photos: [ups[0]], _base: a.updatedAt }));
-        await new Promise(r => setTimeout(r, 200));
-        assert.ok(fs.existsSync(path.join(s.dir, 'uploads', ups[0].id + '.avif')));
-        assert.ok(!fs.existsSync(path.join(s.dir, 'uploads', ups[1].id + '.avif')));
+        const a = await (await fetch(s.base + '/api/projects/' + p.id, json('PUT', { ...p, name: 'Casa Țăruș', photos: ups }))).json();
+        const dir = path.join(s.dir, 'poze', 'architecture', 'casa-tarus');
+        assert.deepEqual(fs.readdirSync(dir).sort(), ['1.avif', '1.sm.webp', '2.avif', '2.sm.webp']);
+        // reorder: the files are renumbered, the URLs follow the pictures
+        const b = await (await fetch(s.base + '/api/projects/' + p.id, json('PUT', { ...a, photos: [a.photos[1], a.photos[0]], _base: a.updatedAt }))).json();
+        assert.equal(b.photos[0].src, '/poze/architecture/casa-tarus/1.avif?v=' + ups[1].id);
+        assert.equal(fs.statSync(path.join(dir, '1.avif')).size, ups[1].bytes);
+        // rename: the folder follows the name
+        const c = await (await fetch(s.base + '/api/projects/' + p.id, json('PUT', { ...b, name: 'Casa Nouă', photos: [b.photos[0]], _base: b.updatedAt }))).json();
+        assert.equal(c.photos[0].src, '/poze/architecture/casa-noua/1.avif?v=' + ups[1].id);
+        assert.ok(!fs.existsSync(dir), 'old folder removed');
+        assert.deepEqual(fs.readdirSync(path.join(s.dir, 'poze', 'architecture', 'casa-noua')).sort(), ['1.avif', '1.sm.webp']);
+        assert.equal((await fetch(s.base + c.photos[0].src)).status, 200);
     });
 
     test('preview uses an unsaved draft only while it matches the saved version', async () => {

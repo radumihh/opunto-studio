@@ -6,7 +6,8 @@
                      settings, backup
      /api/public/*   what the live sites read: published projects only, and
                      the content of protected ones only with a valid token
-     /uploads/*      the processed images, a folder next to this file
+     /poze/*         the photos, a folder next to this file:
+                     poze/architecture/<project>/1.avif … and poze/concepts/…
      /preview/*      the sites' own project pages, fed from the database,
                      so the preview is the site's code and not a copy of it
    and, after `npm run build`, the studio app itself at /.
@@ -17,10 +18,10 @@ import express from 'express';
 import multer from 'multer';
 import path from 'path';
 import crypto from 'crypto';
-import { existsSync, mkdirSync } from 'fs';
+import { existsSync, mkdirSync, copyFileSync } from 'fs';
 import { config, ROOT, isLoopback } from './lib/config.js';
 import { createStore } from './lib/store.js';
-import { createImages } from './lib/images.js';
+import { createImages, URL_BASE } from './lib/images.js';
 import { createValidator } from './lib/validate.js';
 import { TEXTURE_PRESETS, CATEGORY_IDS } from './lib/defaults.js';
 import {
@@ -52,7 +53,7 @@ app.use(express.json({ limit: '4mb' }));
 app.use((req, res, next) => {
     res.set('X-Content-Type-Options', 'nosniff');
     res.set('Referrer-Policy', 'same-origin');
-    if (!req.path.startsWith('/api/public') && !req.path.startsWith('/uploads')) {
+    if (!req.path.startsWith('/api/public') && !req.path.startsWith(URL_BASE)) {
         res.set('X-Frame-Options', 'SAMEORIGIN');
     }
     next();
@@ -101,6 +102,7 @@ app.post('/api/auth/logout', (req, res) => {
    PROJECTS
 --------------------------------------------------------------------- */
 const now = () => new Date().toISOString();
+const newPhotoId = () => crypto.randomBytes(9).toString('base64url');
 const newId = () => {
     const a = 'abcdefghijkmnpqrstuvwxyz23456789';
     return Array.from(crypto.randomBytes(8), b => a[b % a.length]).join('');
@@ -133,6 +135,18 @@ function crossCheck(p) {
     if (taken) errs.push({ field: 'wallSlot', message: 'Poziția ' + p.wallSlot + ' e ocupată de „' + (taken.title || 'fără nume') + '”' });
     if (p.wallHero && others.some(o => o.wallHero)) errs.push({ field: 'wallHero', message: 'Există deja un panou final publicat' });
     return errs;
+}
+
+/* FILES ON DISK CHANGE ONE REQUEST AT A TIME. Saving renumbers a
+   project's photos and cleaning deletes the unused ones; two of those
+   overlapping could delete a file the other just placed. */
+let queue = Promise.resolve();
+const serial = fn => { const r = queue.then(fn); queue = r.catch(() => {}); return r; };
+
+/* pictures still used by a saved project, a room or an open preview stay */
+function gc() {
+    const db = store.read();
+    return images.collect([db.projects, db.categories, [...drafts.values()].map(d => d.data)]).catch(() => 0);
 }
 
 const api = express.Router();
@@ -170,46 +184,59 @@ api.put('/projects/:id', async (req, res) => {
     const next = clean(req.body, current);
     const errors = [...validate(next), ...crossCheck(next)];
     if (errors.length) return res.status(422).json({ error: 'Date invalide', errors });
-    const saved = await store.write(db => {
-        const i = db.projects.findIndex(p => p.id === current.id);
-        if (i < 0) throw Object.assign(new Error('Proiectul a fost șters între timp'), { status: 404 });
-        db.projects[i] = next;
-        return next;
+    const saved = await serial(async () => {
+        await images.placeProject(next, store.projects(next.site), await images.locator(store.read()));
+        const saved = await store.write(db => {
+            const i = db.projects.findIndex(p => p.id === current.id);
+            if (i < 0) throw Object.assign(new Error('Proiectul a fost șters între timp'), { status: 404 });
+            db.projects[i] = next;
+            return next;
+        });
+        drafts.delete(saved.id);
+        await gc();
+        return saved;
     });
-    drafts.delete(saved.id);
-    const gone = images.idsIn(current);
-    images.idsIn(saved).forEach(id => gone.delete(id));
-    gc(gone);
     res.json(saved);
 });
 
 api.post('/projects/:id/duplicate', async (req, res) => {
     const src = store.project(req.params.id);
     if (!src) return res.status(404).json({ error: 'Proiectul nu mai există' });
-    const copy = await store.write(db => {
+    const copy = await serial(async () => {
         const c = structuredClone(src);
         c.id = newId();
+        /* the copy gets its own files, in its own folder */
+        const where = await images.locator(store.read());
+        const from = new Map();
+        for (const ph of images.photosIn(c)) { const id = newPhotoId(); from.set(id, await where(ph.id)); ph.id = id; }
         c.status = 'draft';
         c.createdAt = c.updatedAt = now();
         if (c.site === 'arch') c.name = ((c.name || 'Proiect') + ' (copie)').slice(0, 40);
         else { c.title = ((c.title || 'Proiect') + ' (copie)').slice(0, 32); c.wallSlot = null; c.wallHero = false; }
-        const same = db.projects.filter(o => o.site === c.site);
-        c.order = Math.max(-1, ...same.map(o => o.order ?? 0)) + 1;
-        db.projects.push(c);
-        return c;
+        await images.placeProject(c, store.projects(c.site), async id => from.get(id));
+        return store.write(db => {
+            const same = db.projects.filter(o => o.site === c.site);
+            c.order = Math.max(-1, ...same.map(o => o.order ?? 0)) + 1;
+            db.projects.push(c);
+            return c;
+        });
     });
     res.status(201).json(copy);
 });
 
 api.delete('/projects/:id', async (req, res) => {
-    const gone = await store.write(db => {
-        const i = db.projects.findIndex(p => p.id === req.params.id);
-        if (i < 0) return null;
-        return images.idsIn(db.projects.splice(i, 1)[0]);
+    const removed = await serial(async () => {
+        const found = await store.write(db => {
+            const i = db.projects.findIndex(p => p.id === req.params.id);
+            if (i < 0) return false;
+            db.projects.splice(i, 1);
+            return true;
+        });
+        if (!found) return null;
+        drafts.delete(req.params.id);
+        return gc();
     });
-    if (!gone) return res.status(404).json({ error: 'Proiectul nu mai există' });
-    drafts.delete(req.params.id);
-    const removed = await gc(gone);
+    if (removed === null) return res.status(404).json({ error: 'Proiectul nu mai există' });
     res.json({ ok: true, imagesRemoved: removed });
 });
 
@@ -223,11 +250,6 @@ api.put('/order', async (req, res) => {
     res.json({ ok: true });
 });
 
-/* images still used by a saved project, a room or an open preview stay */
-function gc(gone) {
-    const db = store.read();
-    return images.collect([db.projects, db.categories, [...drafts.values()].map(d => d.data)], gone).catch(() => 0);
-}
 
 /* ---------------------------------------------------------------------
    #arch ROOMS — three fixed records
@@ -239,10 +261,11 @@ api.put('/categories/:id', async (req, res) => {
     const next = { ...req.body, id: current.id, order: current.order };
     const errors = validateCategory(next);
     if (errors.length) return res.status(422).json({ error: 'Date invalide', errors });
-    await store.write(db => { db.categories[current.id] = next; });
-    const gone = images.idsIn(current);
-    images.idsIn(next).forEach(id => gone.delete(id));
-    gc(gone);
+    await serial(async () => {
+        await images.placeCategory(next, await images.locator(store.read()));
+        await store.write(db => { db.categories[current.id] = next; });
+        await gc();
+    });
     res.json(next);
 });
 
@@ -305,7 +328,7 @@ api.put('/settings/admin', async (req, res) => {
     setSession(req, res);
     res.json({ ok: true });
 });
-/* the whole database as a file; the images are in /uploads */
+/* the whole database as a file; the photos are in poze/ */
 api.get('/backup', (req, res) => {
     const db = structuredClone(store.read());
     delete db.settings;
@@ -391,7 +414,9 @@ app.use('/api', (req, res) => res.status(404).json({ error: 'Rută necunoscută'
 /* ---------------------------------------------------------------------
    STATIC
 --------------------------------------------------------------------- */
-app.use('/uploads', (req, res, next) => { res.set('Access-Control-Allow-Origin', '*'); next(); },
+/* the file names repeat (1.avif, 2.avif …) but every URL carries ?v=<photo id>,
+   so a URL always means the same picture and can be cached for good */
+app.use(URL_BASE, (req, res, next) => { res.set('Access-Control-Allow-Origin', '*'); next(); },
     express.static(config.uploadsDir, { immutable: true, maxAge: '365d', fallthrough: false,
         setHeaders: (res, file) => { if (file.endsWith('.avif')) res.type('image/avif'); } }));
 app.use('/preview', admin, express.static(path.join(ROOT, 'preview'), { extensions: ['html'], maxAge: 0 }));
@@ -400,7 +425,7 @@ const DIST = path.join(ROOT, 'dist');
 if (existsSync(DIST)) {
     app.use('/assets', express.static(path.join(DIST, 'assets'), { immutable: true, maxAge: '365d' }));
     app.use(express.static(DIST, { index: false, maxAge: 0 }));
-    app.get(/^\/(?!api\/|uploads\/|preview\/).*/, (req, res) => {
+    app.get(/^\/(?!api\/|poze\/|preview\/).*/, (req, res) => {
         res.set('Cache-Control', 'no-cache').sendFile(path.join(DIST, 'index.html'));
     });
 }
@@ -410,11 +435,54 @@ app.use((err, req, res, next) => {
     if (status >= 500) console.error(err);
     const msg = err.code === 'LIMIT_FILE_SIZE' ? 'Fișier prea mare (max 60 MB)'
         : err.code === 'LIMIT_FILE_COUNT' ? 'Prea multe fișiere într-o cerere'
-        : status === 404 && req.path.startsWith('/uploads') ? 'Imagine inexistentă'
+        : status === 404 && req.path.startsWith(URL_BASE) ? 'Imagine inexistentă'
         : status >= 500 ? 'Eroare internă. Detaliile sunt în jurnalul serverului.' : (err.message || 'Eroare');
     if (res.headersSent) return;
     req.path.startsWith('/api') ? res.status(status).json({ error: msg }) : res.status(status).send(msg);
 });
+
+/* ON START: every picture in its project's folder. Also brings over a
+   database from the old flat layout (uploads/<id>.avif). */
+await serial(async () => {
+    const legacy = path.join(ROOT, 'uploads');
+    const db = store.read();
+    let changed = false;
+    for (const ph of legacyPhotos(db)) {
+        const file = path.join(legacy, ph.id + '.avif');
+        if (!existsSync(file)) continue;
+        mkdirSync(path.join(config.uploadsDir, '_incoming'), { recursive: true });
+        copyFileSync(file, path.join(config.uploadsDir, '_incoming', ph.id + '.avif'));
+        const sm = path.join(legacy, ph.id + '.sm.webp');
+        if (existsSync(sm)) copyFileSync(sm, path.join(config.uploadsDir, '_incoming', ph.id + '.sm.webp'));
+        ph.src = URL_BASE + '_incoming/' + ph.id + '.avif';
+        ph.sm = URL_BASE + '_incoming/' + ph.id + '.sm.webp';
+        changed = true;
+    }
+    const where = await images.locator(db);
+    for (const p of db.projects) {
+        const before = JSON.stringify(p);
+        await images.placeProject(p, db.projects, where).catch(e => console.warn('  ' + (p.name || p.title || p.id) + ': ' + e.message));
+        if (JSON.stringify(p) !== before) changed = true;
+    }
+    for (const c of Object.values(db.categories)) {
+        const before = JSON.stringify(c);
+        await images.placeCategory(c, where).catch(() => {});
+        if (JSON.stringify(c) !== before) changed = true;
+    }
+    if (changed) await store.write(d => { d.projects = db.projects; d.categories = db.categories; });
+    await gc();
+});
+function legacyPhotos(db) {
+    const out = [];
+    const walk = v => {
+        if (!v || typeof v !== 'object') return;
+        if (Array.isArray(v)) return v.forEach(walk);
+        if (v.id && typeof v.src === 'string' && v.src.startsWith('/uploads/')) out.push(v);
+        Object.values(v).forEach(walk);
+    };
+    walk([db.projects, db.categories]);
+    return out;
+}
 
 const server = app.listen(config.port, config.host, () => {
     const url = 'http://' + (config.host === '0.0.0.0' ? 'localhost' : config.host) + ':' + config.port;

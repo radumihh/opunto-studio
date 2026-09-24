@@ -6,11 +6,12 @@
   "type": "module",
   "main": "server.js",
   "scripts": {
-    "dev": "concurrently -k -n server,app -c blue,magenta \"node --watch-path=server.js --watch-path=lib server.js\" \"vite\"",
+    "dev": "concurrently -k -n server,app -c blue,magenta \"node --watch-path=server.js --watch-path=lib --watch-path=schema server.js\" \"vite\"",
     "build": "vite build",
     "start": "node server.js",
     "test": "node --test test/api.test.js",
-    "setup": "npm ci && npm run build"
+    "setup": "npm ci && npm run build",
+    "snapshot": "node scripts/snapshot.js"
   },
   "engines": {
     "node": ">=20"
