@@ -139,10 +139,13 @@ export default function ProjectsPage({ site }) {
         return c;
     }, [list]);
     const active = activeId && (list || []).find(p => p.id === activeId);
+    /* the number the site gives it: its place in its own category (#arch)
+       or in the whole wall (#concepts) */
+    const numberOf = p => (list || []).filter(o => site !== 'arch' || o.category === p.category).indexOf(p) + 1;
 
     return (
-        <div className="mx-auto max-w-[1280px] px-8 pt-8 pb-16">
-            <header className="mb-6 flex items-end justify-between gap-6">
+        <div className="mx-auto max-w-[1280px] px-4 pt-6 pb-16 md:px-8 md:pt-8">
+            <header className="mb-6 flex flex-wrap items-end justify-between gap-4">
                 <div>
                     <h1 className="font-display text-[28px] font-semibold tracking-[-0.022em]">{TITLES[site].title}</h1>
                     <p className="mt-1 max-w-xl text-[13px] text-muted-foreground">{TITLES[site].sub}</p>
@@ -158,7 +161,7 @@ export default function ProjectsPage({ site }) {
                 )}
                 <Segmented value={status} onChange={setStatus}
                     options={[{ value: 'all', label: 'Toate' }, { value: 'published', label: 'Publicate' }, { value: 'draft', label: 'Draft' }]} />
-                <div className="relative ml-auto w-64">
+                <div className="relative w-full sm:ml-auto sm:w-64">
                     <Search className="pointer-events-none absolute top-1/2 left-2.5 size-4 -translate-y-1/2 text-muted-foreground" />
                     <Input value={q} onChange={e => setQ(e.target.value)} placeholder="Caută proiect" className="pl-8" />
                 </div>
@@ -181,12 +184,12 @@ export default function ProjectsPage({ site }) {
                     onDragStart={e => setActiveId(e.active.id)} onDragCancel={() => setActiveId(null)} onDragEnd={onDragEnd}>
                     <SortableContext items={shown.map(p => p.id)} strategy={rectSortingStrategy}>
                         <div className="grid grid-cols-[repeat(auto-fill,minmax(250px,1fr))] gap-4">
-                            {shown.map((p, i) => (
+                            {shown.map(p => (
                                 <Sortable key={p.id} id={p.id} disabled={filtering}>
                                     {handleProps => (
                                         <div className="relative">
                                             <span className="absolute -top-2 -left-2 z-10 grid h-5 min-w-5 place-items-center rounded-full bg-primary px-1.5 font-mono text-[10px] text-primary-foreground shadow">
-                                                {String(i + 1).padStart(2, '0')}
+                                                {String(numberOf(p)).padStart(2, '0')}
                                             </span>
                                             <ProjectCard p={p} handleProps={handleProps}
                                                 onOpen={() => nav('/p/' + p.id)}

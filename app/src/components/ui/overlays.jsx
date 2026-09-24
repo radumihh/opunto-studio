@@ -60,7 +60,7 @@ export function DialogContent({ className, children, title, description, ...prop
 }
 
 /* ---- Confirm (AlertDialog) ------------------------------------------ */
-export function Confirm({ open, onOpenChange, title, description, confirmLabel = 'Confirmă', destructive, onConfirm }) {
+export function Confirm({ open, onOpenChange, title, description, confirmLabel = 'Confirmă', destructive, onConfirm, secondary }) {
     return (
         <AlertDialogPrimitive.Root open={open} onOpenChange={onOpenChange}>
             <AlertDialogPrimitive.Portal>
@@ -70,8 +70,11 @@ export function Confirm({ open, onOpenChange, title, description, confirmLabel =
                         <AlertDialogPrimitive.Title className="text-[15px] font-semibold tracking-tight">{title}</AlertDialogPrimitive.Title>
                         <AlertDialogPrimitive.Description className="text-[13px] leading-relaxed text-muted-foreground">{description}</AlertDialogPrimitive.Description>
                     </div>
-                    <div className="flex justify-end gap-2">
-                        <AlertDialogPrimitive.Cancel className={buttonVariants({ variant: 'outline' })}>Anulează</AlertDialogPrimitive.Cancel>
+                    <div className="flex flex-wrap justify-end gap-2">
+                        <AlertDialogPrimitive.Cancel className={buttonVariants({ variant: secondary ? 'ghost' : 'outline' })}>Anulează</AlertDialogPrimitive.Cancel>
+                        {secondary && (
+                            <AlertDialogPrimitive.Action className={buttonVariants({ variant: 'outline' })} onClick={secondary.onClick}>{secondary.label}</AlertDialogPrimitive.Action>
+                        )}
                         <AlertDialogPrimitive.Action className={buttonVariants({ variant: destructive ? 'destructive' : 'default' })} onClick={onConfirm}>
                             {confirmLabel}
                         </AlertDialogPrimitive.Action>

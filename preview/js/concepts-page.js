@@ -530,7 +530,8 @@
                     f.mg = mg;
                 }
             }
-            if (near !== shownN) { shownN = near; railN.innerHTML = '<b>' + pad(near + 1) + '</b> / ' + pad(nShots); }
+            /* ADAPTED: a project with no photographs yet counts 00 / 00 */
+            if (near !== shownN) { shownN = near; railN.innerHTML = '<b>' + pad(figs.length ? near + 1 : 0) + '</b> / ' + pad(nShots); }
 
             if (busy) return;
             for (i = 0; i < enters.length; i++) {

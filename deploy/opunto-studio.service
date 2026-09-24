@@ -1,0 +1,20 @@
+# systemd: /etc/systemd/system/opunto-studio.service
+#   sudo systemctl daemon-reload
+#   sudo systemctl enable --now opunto-studio
+#   journalctl -u opunto-studio -f
+[Unit]
+Description=Opunto Studio
+After=network.target
+
+[Service]
+Type=simple
+User=opunto
+WorkingDirectory=/opt/opunto-studio
+ExecStart=/usr/bin/node server.js
+Restart=on-failure
+RestartSec=3
+Environment=NODE_ENV=production
+# settings come from /opt/opunto-studio/.env
+
+[Install]
+WantedBy=multi-user.target

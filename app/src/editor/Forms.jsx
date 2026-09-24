@@ -1,4 +1,7 @@
-import { Plus, X, ArrowUp, ArrowDown } from 'lucide-react';
+import { useEffect, useState } from 'react';
+import { Plus, X, ArrowUp, ArrowDown, Layers } from 'lucide-react';
+import { api } from '@/lib/api';
+import { DropdownMenu, DropdownMenuTrigger, DropdownMenuContent, DropdownMenuItem } from '@/components/ui/overlays';
 import { Button, Input, Switch, Segmented, Label, Card } from '@/components/ui/primitives';
 import { Select } from '@/components/ui/overlays';
 import { CATEGORIES, cn } from '@/lib/utils';
@@ -9,7 +12,10 @@ import { FactsEditor, TagInput, WallPicker } from './parts';
 /* photos change as a list; the card photo is a position, so it is moved
    along with the photograph it points at */
 function photoSetter(p, set) {
+    const id = p.id;
     return fn => set(cur => {
+        /* an upload that finishes after the editor moved to another project */
+        if (!cur || cur.id !== id) return cur;
         const before = cur.photos || [];
         const after = typeof fn === 'function' ? fn(before) : fn;
         if (cur.site !== 'arch') return { ...cur, photos: after };
@@ -19,9 +25,13 @@ function photoSetter(p, set) {
     });
 }
 
-function afterOptions(n, autoLabel) {
-    return [{ value: 'auto', label: autoLabel }].concat(
-        Array.from({ length: Math.max(n, 1) }, (_, i) => ({ value: String(i + 1), label: 'După poza ' + (i + 1) })));
+/* "after photo n" — and a value past the last photo (photos were removed)
+   stays selectable and says what it does now */
+function afterOptions(n, autoLabel, current) {
+    const opts = [{ value: 'auto', label: autoLabel }].concat(
+        Array.from({ length: n }, (_, i) => ({ value: String(i + 1), label: 'După poza ' + (i + 1) })));
+    if (current && current > n) opts.push({ value: String(current), label: 'După poza ' + current + (n ? ' (acum: după ultima)' : ' (nu există încă)') });
+    return opts;
 }
 
 function Row({ children, className }) { return <div className={cn('grid grid-cols-2 gap-3', className)}>{children}</div>; }
@@ -42,6 +52,8 @@ function SwitchRow({ label, hint, checked, onChange, id }) {
    #arch
 ==================================================================== */
 export function ArchForm({ p, set, errors }) {
+    const [presets, setPresets] = useState([]);
+    useEffect(() => { api.textures().then(t => setPresets(t.presets)).catch(() => {}); }, []);
     const upd = patch => set(cur => ({ ...cur, ...patch }));
     const n = (p.photos || []).length;
     const texts = p.texts || [];
@@ -75,6 +87,10 @@ export function ArchForm({ p, set, errors }) {
                 </Field>
                 <SwitchRow id="namelist" label="Apare în lista de nume" hint="Rândul „Nineteen projects since 2016” de sub portofoliu."
                     checked={p.inNameList !== false} onChange={v => upd({ inNameList: v })} />
+                {p.inNameList !== false && (
+                    <TextField id="listName" label="Nume scurt în listă" value={p.listName} max={28} placeholder={p.name || 'ex. Tartasesti'}
+                        hint="Gol = numele proiectului." onChange={v => upd({ listName: v })} error={errors.listName} />
+                )}
             </Section>
 
             <Section id="photos" title="Fotografii" description="În ordinea din pagină. Prima e coperta. Din meniul fiecărei poze alegi poza de pe card sau un spațiu mai mare înaintea ei.">
@@ -98,12 +114,12 @@ export function ArchForm({ p, set, errors }) {
                 {texts.length === 0 && <p className={cn('text-[13px]', errors.texts ? 'text-destructive' : 'text-muted-foreground')}>{errors.texts || 'Niciun text încă.'}</p>}
                 {texts.map((t, i) => (
                     <Card key={i} className="grid gap-3 p-3.5">
-                        <div className="flex items-center gap-2">
+                        <div className="flex flex-wrap items-center gap-2">
                             <span className="grid size-6 shrink-0 place-items-center rounded-md bg-secondary font-mono text-[11px]">{i + 1}</span>
-                            <Input value={t.heading} maxLength={24} placeholder="Titlu mic (ex. Context)" onChange={e => setText(i, { heading: e.target.value })} className="h-8" />
-                            <div className="w-44 shrink-0">
+                            <Input value={t.heading} maxLength={24} placeholder="Titlu mic (ex. Context)" onChange={e => setText(i, { heading: e.target.value })} className="h-8 min-w-[120px] flex-1" />
+                            <div className="order-last w-full sm:order-none sm:w-44 sm:shrink-0">
                                 <Select value={t.afterPhoto ? String(t.afterPhoto) : 'auto'} onValueChange={v => setText(i, { afterPhoto: v === 'auto' ? null : +v })}
-                                    options={afterOptions(n, 'Automat (' + AUTO[i] + ')')} className="h-8" />
+                                    options={afterOptions(n, 'Automat (' + AUTO[i] + ')', t.afterPhoto)} className="h-8" />
                             </div>
                             <div className="flex shrink-0">
                                 <Button variant="ghost" size="icon-sm" disabled={i === 0} onClick={() => moveText(i, i - 1)} aria-label="Mută sus"><ArrowUp /></Button>
@@ -122,7 +138,7 @@ export function ArchForm({ p, set, errors }) {
                     placeholder="De ce aceste materiale și ce face fiecare." onChange={v => setMats({ note: v })} />
                 <Field label="Poziție în pagină">
                     <Select value={mats.afterPhoto ? String(mats.afterPhoto) : 'auto'} onValueChange={v => setMats({ afterPhoto: v === 'auto' ? null : +v })}
-                        options={afterOptions(n, 'Automat (după poza 4)')} />
+                        options={afterOptions(n, 'Automat (după poza 4)', mats.afterPhoto)} />
                 </Field>
                 <div className="grid gap-2">
                     {(mats.items || []).map((m, i) => (
@@ -136,11 +152,25 @@ export function ArchForm({ p, set, errors }) {
                         </div>
                     ))}
                     {(mats.items || []).length < 4 && (
-                        <Button variant="outline" size="sm" className="justify-self-start" onClick={() => setMats({ items: [...(mats.items || []), { name: '', image: null }] })}>
-                            <Plus />Material
-                        </Button>
+                        <div className="flex flex-wrap items-center gap-2">
+                            <Button variant="outline" size="sm" onClick={() => setMats({ items: [...(mats.items || []), { name: '', image: null }] })}>
+                                <Plus />Material
+                            </Button>
+                            {presets.filter(t => !(mats.items || []).some(m => m.image && m.image.id === t.image.id)).length > 0 && (
+                                <DropdownMenu>
+                                    <DropdownMenuTrigger asChild><Button variant="ghost" size="sm"><Layers />Din texturile site-ului</Button></DropdownMenuTrigger>
+                                    <DropdownMenuContent align="start">
+                                        {presets.filter(t => !(mats.items || []).some(m => m.image && m.image.id === t.image.id)).map(t => (
+                                            <DropdownMenuItem key={t.image.id} onSelect={() => setMats({ items: [...(mats.items || []), { name: t.name, image: t.image }].slice(0, 4) })}>
+                                                <img src={t.image.src} alt="" className="size-5 rounded object-cover" />{t.name}
+                                            </DropdownMenuItem>
+                                        ))}
+                                    </DropdownMenuContent>
+                                </DropdownMenu>
+                            )}
+                        </div>
                     )}
-                    <p className="text-[12px] text-muted-foreground">Textura: o poză pătrată, de aproape, cu materialul. Culoarea de sub ea e măsurată automat.</p>
+                    <p className="text-[12px] text-muted-foreground">Textura: o poză pătrată, de aproape, cu materialul (trag-o peste pătrat sau apasă pe el), ori una din cele patru texturi pe care le folosește site-ul acum. Culoarea de sub ea e măsurată automat.</p>
                 </div>
             </Section>
         </>

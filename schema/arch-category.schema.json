@@ -1,0 +1,21 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "arch-category.schema.json",
+  "title": "Categorie #arch",
+  "description": "Una din cele trei camere ale portofoliului #arch. Categoriile sunt fixe: se editează, nu se adaugă și nu se șterg.",
+  "type": "object",
+  "required": ["id", "name", "title", "text", "tagline", "stripLine"],
+  "properties": {
+    "id":    { "enum": ["interior-design", "architecture", "real-estate-marketing"], "readOnly": true },
+    "order": { "type": "integer", "readOnly": true },
+    "name":  { "title": "Nume", "type": "string", "minLength": 1, "maxLength": 32, "description": "Butonul din index, kickerul paginii de proiect, „Back to …”." },
+    "title": { "title": "Titlu mare", "type": "string", "minLength": 1, "maxLength": 40, "description": "Un rând nou = rând nou în titlu." },
+    "text":  { "title": "Paragraf", "type": "string", "maxLength": 360 },
+    "tagline":   { "title": "Rând scurt", "type": "string", "maxLength": 48 },
+    "stripLine": { "title": "Rând sub lista de proiecte", "type": "string", "maxLength": 100 },
+    "photo":       { "title": "Poza principală", "oneOf": [ { "$ref": "photo.schema.json" }, { "type": "null" } ], "description": "Ideal aceeași cu poza de card a primului proiect din categorie: ea „zboară” în primul card când camera e apăsată." },
+    "secondPhoto": { "title": "A doua poză", "oneOf": [ { "$ref": "photo.schema.json" }, { "type": "null" } ] },
+    "secondCaption": { "title": "Text sub a doua poză", "type": "string", "maxLength": 40 }
+  },
+  "additionalProperties": false
+}

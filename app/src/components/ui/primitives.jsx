@@ -107,13 +107,13 @@ export function Tooltip({ content, children, side = 'bottom' }) {
 /* ---- Segmented control (Apple-style tabs for small choices) --------- */
 export function Segmented({ value, onChange, options, className, size = 'default' }) {
     return (
-        <div role="radiogroup" className={cn('inline-flex rounded-lg bg-secondary p-0.5', className)}>
+        <div role="radiogroup" className={cn('inline-flex max-w-full overflow-x-auto rounded-lg bg-secondary p-0.5 [scrollbar-width:none]', className)}>
             {options.map(o => {
                 const on = o.value === value;
                 return (
                     <button key={o.value} type="button" role="radio" aria-checked={on} onClick={() => onChange(o.value)}
                         title={o.title}
-                        className={cn('inline-flex items-center justify-center gap-1.5 rounded-md font-medium transition-all cursor-pointer [&_svg]:size-3.5',
+                        className={cn('inline-flex shrink-0 items-center justify-center gap-1.5 whitespace-nowrap rounded-md font-medium transition-all cursor-pointer [&_svg]:size-3.5',
                             size === 'sm' ? 'h-6 px-2 text-[11px]' : 'h-7 px-3 text-xs',
                             on ? 'bg-card text-foreground shadow-[0_1px_3px_rgb(0_0_0/0.12),0_0_0_0.5px_rgb(0_0_0/0.04)]' : 'text-muted-foreground hover:text-foreground')}>
                         {o.label}

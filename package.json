@@ -8,7 +8,9 @@
   "scripts": {
     "dev": "concurrently -k -n server,app -c blue,magenta \"node --watch-path=server.js --watch-path=lib server.js\" \"vite\"",
     "build": "vite build",
-    "start": "node server.js"
+    "start": "node server.js",
+    "test": "node --test test/api.test.js",
+    "setup": "npm ci && npm run build"
   },
   "engines": {
     "node": ">=20"

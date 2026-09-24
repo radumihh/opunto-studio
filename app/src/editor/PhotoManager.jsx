@@ -25,7 +25,7 @@ function Tile({ photo, index, isCard, overlay, onMenu, handle, dragging }) {
             <div className="pointer-events-none absolute bottom-1.5 left-1.5 flex flex-wrap gap-1">
                 {index === 0 && <Badge className="bg-white/92 text-foreground backdrop-blur"><Star />Copertă</Badge>}
                 {isCard && <Badge className="bg-white/92 text-foreground backdrop-blur"><CreditCard />Card</Badge>}
-                {photo.spaced && <Badge className="bg-white/92 text-foreground backdrop-blur"><MoveHorizontal />Spațiu</Badge>}
+                {photo.spaced && index > 0 && <Badge className="bg-white/92 text-foreground backdrop-blur"><MoveHorizontal />Spațiu</Badge>}
                 {photo.alt && <Badge className="bg-white/92 text-foreground backdrop-blur"><Type />Alt</Badge>}
             </div>
             {!overlay && (

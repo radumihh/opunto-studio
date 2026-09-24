@@ -36,6 +36,7 @@
     },
 
     "inNameList": { "title": "Apare în lista de nume", "type": "boolean" },
+    "listName":   { "title": "Nume scurt în listă", "type": "string", "maxLength": 28, "description": "Forma din lista de nume („Tartasesti.”). Gol = numele proiectului." },
 
     "facts": {
       "title": "Date proiect",

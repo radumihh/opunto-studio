@@ -23,8 +23,9 @@
     var wantId = params.get('id');
     var visitor = params.get('visitor') === '1';
     var projects = [], hasPassword = false;
+    /* unlocked for this page only: the studio's "Vizitator" should meet
+       the gate every time it is switched on */
     var unlocked = false;
-    try { unlocked = sessionStorage.getItem('pv-unlock') === '1'; } catch (e) {}
 
     function esc(s) {
         return String(s == null ? '' : s).replace(/[&<>"]/g, function (c) {
@@ -62,7 +63,9 @@
     function drawStrip() {
         var track = document.getElementById('pfTrack');
         var want = byId(wantId);
-        if (!shownCat) shownCat = (want && want.category) || params.get('cat') || 'architecture';
+        /* the room of the project being edited, even after its category changes */
+        if (want) shownCat = want.category;
+        else if (!shownCat) shownCat = params.get('cat') || 'architecture';
         var html = '';
         SETS.forEach(function (cat, set) {
             var n = 0;
@@ -143,10 +146,15 @@
         }
     }
 
-    function refresh(id) {
+    /* the page ignores a refresh while it is mid-animation (opening,
+       turning); the newest one waits and is tried again until it lands */
+    var retry = 0;
+    function refresh(id, tries) {
+        clearTimeout(retry);
         if (!isOpen()) return;
-        if (ARCH) window.__ppRefresh(id || window.__ppCurrent());
-        else window.__cxRefresh(id || null);
+        var ok = ARCH ? window.__ppRefresh(id || window.__ppCurrent()) : window.__cxRefresh(id || null);
+        tries = tries || 0;
+        if (!ok && tries < 24) retry = setTimeout(function () { refresh(id, tries + 1); }, 250);
     }
 
     /* on window, in the capture phase: ahead of the page's own card
@@ -186,7 +194,6 @@
                 .then(function (r) {
                     if (!r.ok) throw new Error('bad');
                     unlocked = true;
-                    try { sessionStorage.setItem('pv-unlock', '1'); } catch (x) {}
                     shut();
                     setTimeout(function () { open(p.id); }, 250);
                 })

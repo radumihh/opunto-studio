@@ -74,7 +74,7 @@ export function PreviewPane({ site, id, onHide }) {
                     <div className={cn('overflow-hidden bg-white shadow-[0_24px_60px_-20px_rgb(0_0_0/0.35),0_0_0_1px_rgb(0_0_0/0.06)]',
                         device === 'mobile' ? 'rounded-[28px]' : 'rounded-lg')}
                         style={{ width: d.w, height: d.h, transform: 'scale(' + scale + ')', transformOrigin: '0 0' }}>
-                        <iframe key={src} title="Preview" src={src} onLoad={() => setLoading(false)}
+                        <iframe key={src} data-preview title="Preview" src={src} onLoad={() => setLoading(false)}
                             className="size-full border-0" style={{ width: d.w, height: d.h }} />
                     </div>
                     {loading && <div className="absolute inset-0 animate-pulse rounded-lg bg-white/60" />}
