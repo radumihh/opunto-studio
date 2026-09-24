@@ -1,0 +1,7 @@
+{
+  "version": "0.0.1",
+  "configurations": [
+    { "name": "studio-api", "runtimeExecutable": "node", "runtimeArgs": ["server.js"], "port": 4100 },
+    { "name": "studio-app", "runtimeExecutable": "npx", "runtimeArgs": ["vite"], "port": 5173 }
+  ]
+}

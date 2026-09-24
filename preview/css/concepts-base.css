@@ -1,0 +1,76 @@
+/* The concepts preview's start screen: the wall, five across and three
+   down, each cell in the slot its project asks for. The site's wall is a
+   travelling, pulled-back composition; this is the same fifteen seats laid
+   flat, so a project's slot and its hover can be checked before it goes
+   live. The project page that opens over it is the site's own. */
+* { margin: 0; padding: 0; box-sizing: border-box; }
+html, body { height: 100%; }
+body { background: var(--cx-s0); color: var(--cx-ink); overflow: hidden; -webkit-font-smoothing: antialiased; }
+#subsite-concepts { position: fixed; inset: 0; }
+
+.pv-wall {
+    position: absolute; inset: 0;
+    display: grid;
+    grid-template-rows: auto 1fr;
+    padding: var(--cx-edge);
+    gap: 1.2rem;
+}
+.pv-wall-head {
+    display: flex; justify-content: space-between;
+    font-family: var(--cx-mono); font-size: var(--cx-t-micro);
+    letter-spacing: var(--cx-tr-micro); text-transform: uppercase; color: var(--cx-ink-3);
+}
+.pv-wall-head b { color: var(--cx-ink); font-weight: 400; }
+.pv-grid {
+    display: grid;
+    grid-template-columns: repeat(5, 1fr);
+    grid-template-rows: repeat(3, 1fr);
+    gap: 6px;
+    min-height: 0;
+}
+.pv-cell {
+    position: relative; overflow: hidden;
+    background: var(--cx-s2);
+    min-height: 0;
+    cursor: pointer;
+}
+.pv-cell.is-empty { cursor: default; background: transparent; outline: 1px dashed var(--cx-line); outline-offset: -1px; }
+.pv-cell img { position: absolute; inset: 0; width: 100%; height: 100%; object-fit: cover; filter: grayscale(1) brightness(.72); transition: filter .6s var(--cx-ease), transform 1s var(--cx-ease); }
+.pv-cell:hover img { filter: none; transform: scale(1.04); }
+.pv-cell b {
+    position: absolute; left: .6rem; top: .5rem; z-index: 2;
+    font-family: var(--cx-mono); font-size: var(--cx-t-micro); font-weight: 400;
+    letter-spacing: var(--cx-tr-micro); color: var(--cx-ink-2);
+}
+.pv-cell.is-empty b { color: var(--cx-ink-3); }
+.pv-cell .pv-info {
+    position: absolute; left: .6rem; right: .6rem; bottom: .55rem; z-index: 2;
+    display: grid; gap: .1rem;
+    opacity: 0; transform: translateY(6px);
+    transition: opacity .45s var(--cx-ease), transform .45s var(--cx-ease);
+}
+.pv-cell:hover .pv-info { opacity: 1; transform: none; }
+.pv-info .y { font-family: var(--cx-mono); font-size: var(--cx-t-micro); color: var(--cx-sig); }
+.pv-info .n { font-family: var(--cx-serif); font-size: clamp(1.1rem, 1.6vw, 1.6rem); line-height: 1; }
+.pv-info .p { font-family: var(--cx-mono); font-size: var(--cx-t-micro); color: var(--cx-ink-2); text-transform: uppercase; letter-spacing: var(--cx-tr-micro); }
+.pv-cell .pv-flag {
+    position: absolute; right: .5rem; top: .45rem; z-index: 2;
+    font-family: var(--cx-mono); font-size: .6rem; letter-spacing: var(--cx-tr-micro); text-transform: uppercase;
+    background: var(--cx-ink); color: var(--cx-s0); padding: .12rem .4rem;
+}
+.pv-cell .pv-flag.is-hero { background: var(--cx-sig); }
+.pv-cell.is-current { outline: 1px solid var(--cx-sig); outline-offset: -1px; }
+
+/* projects without a slot: a row under the wall */
+.pv-loose {
+    display: flex; gap: 6px; flex-wrap: wrap;
+    font-family: var(--cx-mono); font-size: var(--cx-t-micro); color: var(--cx-ink-3);
+    text-transform: uppercase; letter-spacing: var(--cx-tr-micro);
+}
+.pv-loose button { border: 1px solid var(--cx-line); padding: .3rem .6rem; color: var(--cx-ink-2); background: none; font: inherit; cursor: pointer; }
+.pv-loose button:hover { border-color: var(--cx-sig); color: var(--cx-ink); }
+
+@media (max-width: 900px) {
+    .pv-grid { grid-template-columns: repeat(3, 1fr); grid-template-rows: none; grid-auto-rows: 28vw; overflow-y: auto; }
+    body { overflow: auto; }
+}

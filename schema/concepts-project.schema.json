@@ -1,0 +1,73 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "concepts-project.schema.json",
+  "title": "Proiect #concepts",
+  "description": "Un proiect din site-ul Concepts. `title` = eticheta din formular, `description` = textul de ajutor.",
+  "type": "object",
+  "required": ["id", "site", "status", "title", "photos"],
+  "properties": {
+    "id":        { "type": "string", "readOnly": true },
+    "site":      { "const": "concepts" },
+    "status":    { "title": "Stare", "enum": ["draft", "published"] },
+    "protected": { "title": "Protejat cu parolă", "type": "boolean" },
+    "order":     { "type": "integer", "minimum": 0, "readOnly": true },
+    "createdAt": { "type": "string", "readOnly": true },
+    "updatedAt": { "type": "string", "readOnly": true },
+
+    "title":  { "title": "Nume proiect", "type": "string", "maxLength": 32 },
+    "client": { "title": "Client", "type": "string", "maxLength": 40 },
+    "type":   { "title": "Tip lucrare", "type": "string", "maxLength": 32 },
+    "place":  { "title": "Locație", "type": "string", "maxLength": 32 },
+    "year":   { "title": "An", "type": "string", "pattern": "^([0-9]{4})?$" },
+
+    "photos": {
+      "title": "Fotografii",
+      "description": "5 poze. Prima apare și pe perete.",
+      "type": "array",
+      "maxItems": 5,
+      "items": { "$ref": "photo.schema.json" }
+    },
+
+    "facts": {
+      "title": "Trei cifre",
+      "type": "array",
+      "maxItems": 3,
+      "items": {
+        "type": "object",
+        "required": ["label", "value"],
+        "properties": {
+          "label": { "title": "Etichetă", "type": "string", "maxLength": 16 },
+          "value": { "title": "Valoare",  "type": "string", "maxLength": 16 }
+        },
+        "additionalProperties": false
+      }
+    },
+
+    "summary":  { "title": "Descriere într-o frază", "type": "string", "maxLength": 180 },
+    "story":    { "title": "Povestea proiectului", "type": "string", "maxLength": 700 },
+    "approach": { "title": "Abordare", "type": "string", "maxLength": 1000 },
+    "scope":    { "title": "Ce am făcut", "type": "array", "maxItems": 8, "items": { "type": "string", "maxLength": 32 } },
+
+    "wallSlot": { "title": "Poziție pe perete", "type": ["string", "null"], "pattern": "^[A-C][1-5]$" },
+    "wallHero": { "title": "Panoul final", "type": "boolean" }
+  },
+  "additionalProperties": false,
+
+  "if":   { "properties": { "status": { "const": "published" } } },
+  "then": {
+    "required": ["type", "place", "year", "facts", "summary", "story", "approach", "scope", "wallSlot"],
+    "properties": {
+      "title":    { "minLength": 1 },
+      "type":     { "minLength": 1 },
+      "place":    { "minLength": 1 },
+      "year":     { "minLength": 4 },
+      "photos":   { "minItems": 5 },
+      "facts":    { "minItems": 3 },
+      "summary":  { "minLength": 1 },
+      "story":    { "minLength": 1 },
+      "approach": { "minLength": 1 },
+      "scope":    { "minItems": 1 },
+      "wallSlot": { "type": "string" }
+    }
+  }
+}

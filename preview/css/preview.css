@@ -1,0 +1,67 @@
+/* What the preview adds on top of the sites' own styles: the empty
+   state, and the password gate a visitor meets on a protected project.
+   Each is set in the voice of the room it appears in. */
+
+.pv-empty {
+    position: fixed; inset: 0;
+    display: grid; place-items: center;
+    text-align: center;
+    padding: 2rem;
+}
+.pv-empty p { max-width: 28rem; line-height: 1.5; opacity: .6; }
+
+/* ---- THE GATE -------------------------------------------------------- */
+.pv-gate {
+    position: fixed; inset: 0; z-index: 10000;
+    display: grid; place-items: center;
+    padding: 1.5rem;
+    opacity: 0;
+    transition: opacity .5s cubic-bezier(.22, 1, .36, 1);
+}
+.pv-gate.on { opacity: 1; }
+.pv-gate form { width: min(26rem, 100%); display: grid; gap: 1.4rem; }
+.pv-gate .g-kick { display: flex; justify-content: space-between; }
+.pv-gate h2 { line-height: .95; }
+.pv-gate .g-row { display: flex; align-items: stretch; }
+.pv-gate input {
+    flex: 1; min-width: 0;
+    font: inherit; font-size: 1rem;
+    background: transparent; color: inherit;
+    border: 0; border-bottom: 1px solid currentColor;
+    padding: .7rem 0; outline: none; border-radius: 0;
+}
+.pv-gate button[type="submit"] {
+    border-bottom: 1px solid currentColor;
+    padding: 0 0 0 1rem;
+    display: flex; align-items: center; gap: .5rem;
+}
+.pv-gate .g-err { min-height: 1.2em; }
+.pv-gate .g-back { justify-self: start; opacity: .6; }
+.pv-gate .g-back:hover { opacity: 1; }
+.pv-gate.shake form { animation: pv-shake .42s cubic-bezier(.36, .07, .19, .97); }
+@keyframes pv-shake {
+    15%, 85% { transform: translateX(-2px); }
+    30%, 70% { transform: translateX(5px); }
+    45%, 55% { transform: translateX(-7px); }
+}
+
+/* architecture: white, Archivo, the mono labels */
+.pv-arch .pv-gate { background: #fff; color: #000; font-family: var(--font-sans); }
+.pv-arch .pv-gate .g-kick, .pv-arch .pv-gate .g-err, .pv-arch .pv-gate button, .pv-arch .pv-gate .g-back {
+    font-family: var(--font-mono); font-size: var(--t-micro); letter-spacing: var(--tr-caps); text-transform: uppercase;
+}
+.pv-arch .pv-gate h2 { font-size: clamp(2.4rem, 6vw, 5rem); font-weight: 600; font-stretch: var(--w-display); text-transform: uppercase; letter-spacing: -0.02em; }
+.pv-arch .pv-gate .g-kick span:last-child { color: var(--arch-fg-soft); }
+.pv-arch .pv-gate .g-err { color: #b00020; }
+
+/* concepts: the near-black ground, the serif, the signal green */
+.pv-concepts .pv-gate { background: var(--cx-s0); color: var(--cx-ink); font-family: var(--cx-sans); }
+.pv-concepts .pv-gate .g-kick, .pv-concepts .pv-gate .g-err, .pv-concepts .pv-gate button, .pv-concepts .pv-gate .g-back {
+    font-family: var(--cx-mono); font-size: var(--cx-t-micro); letter-spacing: var(--cx-tr-micro); text-transform: uppercase;
+}
+.pv-concepts .pv-gate h2 { font-family: var(--cx-serif); font-weight: 400; font-size: clamp(2.6rem, 6.5vw, 5.4rem); }
+.pv-concepts .pv-gate .g-kick span:last-child { color: var(--cx-ink-3); }
+.pv-concepts .pv-gate input { border-color: var(--cx-line); }
+.pv-concepts .pv-gate input:focus { border-color: var(--cx-sig); }
+.pv-concepts .pv-gate button[type="submit"] { color: var(--cx-sig); border-color: var(--cx-line); }
+.pv-concepts .pv-gate .g-err { color: #e0705a; }

@@ -1,0 +1,517 @@
+/* ---------------------------------------------------------------
+   THE PROJECT PAGE — one project, laid out as one long sheet.
+
+   TWO LINES RUN THE WHOLE PAGE, and every block hangs off one of
+   them. WORDS hang from a top rule, nineteen hundredths down; PICTURES
+   stand on a baseline, thirteen hundredths up. The name, the data and
+   the paragraphs all start on the top rule; every photograph and every
+   material square puts its foot on the baseline. So a page of blocks
+   of different sizes still reads as set rather than scattered — the
+   same discipline a monograph uses, run sideways.
+
+   Everything that is a picture develops from grey to colour as it
+   crosses into the right thirty per cent of the window. Everything
+   that is a block arrives the way the architecture room's planes do —
+   a clip-path wipe, lines rising out of masks — and only as it comes
+   on screen, never all at once when the page opens.
+
+   Set in the room's own type: Archivo for the name and the data, at
+   the stretch the hero uses; IBM Plex Mono for every index and label.
+   White, black, --arch-fg-soft and the room's hairline. Nothing else.
+   --------------------------------------------------------------- */
+
+#pp {
+    --pp-top:  19svh;        /* the rule words hang from */
+    --pp-base: 13svh;        /* the line pictures stand on */
+    position: fixed;
+    inset: 0;
+    z-index: 9000;
+    background: var(--arch-bg, #fff);
+    color: var(--arch-fg, #000);
+    overflow: hidden;
+    visibility: hidden;
+    /* STATED, NOT LEFT AT `none`: the open tweens this from the pressed
+       card's rectangle, and a tween out of a keyword has nothing to
+       interpolate */
+    clip-path: inset(0px 0px 0px 0px);
+    font-family: var(--font-sans, 'Archivo', Helvetica, Arial, sans-serif);
+    -webkit-font-smoothing: antialiased;
+    touch-action: none;
+    overscroll-behavior: contain;
+    cursor: grab;
+}
+#pp.is-dragging { cursor: grabbing; }
+
+/* ---- shared : the mono voice every label is set in ------------------ */
+.pp-bar, .pp-kick, .pp-cap, .pp-st-l, .pp-sw-cap, .pp-hint, .pp-next-label {
+    font-family: var(--font-mono, 'IBM Plex Mono', ui-monospace, monospace);
+    font-size: var(--t-micro, 0.72rem);
+    letter-spacing: var(--tr-caps, 0.05em);
+    text-transform: uppercase;
+    font-variant-numeric: tabular-nums;
+}
+/* a mask for anything that rises into place */
+/* cut on one axis only — `overflow: hidden` cut both, and shaved the
+   end off a long name */
+.pp-m { display: block; clip-path: inset(-0.25em -50vw -0.1em -50vw); padding-bottom: 0.08em; margin-bottom: -0.08em; }
+.pp-m > span, .pp-wd > span { display: inline-block; will-change: transform; }
+.pp-wd { display: inline-block; overflow: hidden; vertical-align: top;
+         padding-bottom: 0.12em; margin-bottom: -0.12em; }
+
+/* ---- THE BAR : where you are, which photograph, and the way out ------ */
+.pp-bar {
+    position: absolute;
+    left: var(--gutter, 4vw);
+    right: var(--gutter, 4vw);
+    top: calc(var(--edge-v, 40px) * 0.62);
+    z-index: 3;
+    display: flex;
+    align-items: baseline;
+    justify-content: space-between;
+    pointer-events: none;
+    /* the photographs run under it, top to bottom: set in white and
+       differenced, it reads black on the page and light on a picture */
+    mix-blend-mode: difference;
+    color: #fff;
+}
+.pp-where { color: rgba(255,255,255,.62); }
+.pp-where b, .pp-count b { font-weight: 400; color: #fff; }
+.pp-count {
+    position: absolute;
+    left: 50%;
+    transform: translateX(-50%);
+    display: flex;
+    gap: 0.5em;
+    color: rgba(255,255,255,.62);
+}
+.pp-count .pp-m { display: inline-block; }
+.pp-close {
+    pointer-events: auto;
+    appearance: none;
+    background: none;
+    border: 0;
+    padding: 0.4rem 0;
+    margin: -0.4rem 0;
+    font: inherit;
+    letter-spacing: inherit;
+    text-transform: inherit;
+    color: #fff;
+    cursor: pointer;
+    position: relative;
+}
+/* the underline is drawn, not switched on */
+.pp-close::after {
+    content: '';
+    position: absolute;
+    left: 0; right: 0; bottom: 0.2rem;
+    height: 1px;
+    background: currentColor;
+    transform: scaleX(0);
+    transform-origin: 100% 50%;
+    transition: transform .5s var(--ease, cubic-bezier(.25,1,.5,1));
+}
+.pp-close:hover::after,
+.pp-close:focus-visible::after { transform: scaleX(1); transform-origin: 0 50%; }
+.pp-close:focus-visible { outline: none; }
+
+/* ---- THE SHEET ------------------------------------------------------ */
+/* A SHEET. Three of them exist while the page is open — the one being
+   read and, built ahead, the projects either side — so a view is hidden
+   unless it has a role. Each is opaque: arriving, it covers the one it
+   replaces without either of them having to fade. */
+.pp-view {
+    position: absolute;
+    inset: 0;
+    overflow: hidden;
+    visibility: hidden;
+    z-index: 0;
+    background: var(--arch-bg, #fff);
+    contain: layout paint style;
+    will-change: transform;
+}
+.pp-view.is-cur { visibility: visible; z-index: 1; }
+.pp-view.is-in  { visibility: visible; z-index: 2; }
+/* the counter-travel of the wipe between two projects : see THE TURN */
+.pp-mask { position: absolute; inset: 0; will-change: transform; }
+
+/* THE NAME IN TRANSIT. A copy lifted out of the sheet and laid over
+   the window, so it can travel from the foot of one project into the
+   title of the next while both sheets are being cut underneath it. */
+.pp-ghost {
+    position: absolute;
+    left: 0;
+    top: 0;
+    z-index: 4;
+    margin: 0;
+    pointer-events: none;
+    white-space: nowrap;
+    color: var(--arch-fg, #000);
+    transform-origin: 0 0;
+    will-change: transform;
+}
+.pp-kick.pp-ghost { margin: 0; }
+.pp-track {
+    position: absolute;
+    left: 0; top: 0;
+    height: 100%;
+    display: flex;
+    align-items: flex-end;
+    /* no padding top or bottom: the photographs take the full height */
+    padding: 0 var(--gutter, 4vw);
+    will-change: transform;
+}
+/* a block of words, hanging from the top rule, its foot on the baseline */
+.pp-hang {
+    flex: none;
+    align-self: stretch;
+    padding-top: var(--pp-top);
+    padding-bottom: var(--pp-base);
+    display: flex;
+    flex-direction: column;
+}
+
+.pp-kick {
+    display: flex;
+    gap: 0.9rem;
+    color: var(--arch-fg-soft, #565656);
+    margin-bottom: clamp(1.1rem, 2.6vh, 2rem);
+}
+.pp-kick b { font-weight: 400; color: var(--arch-fg, #000); }
+
+/* ---- THE TITLE ------------------------------------------------------ */
+.pp-title {
+    width: clamp(20rem, 36vw, 42rem);
+    margin-right: 6vw;
+    justify-content: space-between;
+}
+/* THE NAME, at the stretch the hero sets .brand-name in and heavier —
+   the one thing on the page that is not a photograph */
+.pp-name {
+    margin: 0;
+    font-weight: 600;
+    font-variation-settings: 'wdth' 112, 'wght' 600;
+    font-size: clamp(2.8rem, 6.6vw, 7.4rem);
+    line-height: 0.9;
+    letter-spacing: -0.035em;
+    text-transform: uppercase;
+}
+.pp-name .pp-m > span { display: block; }
+
+.pp-hint {
+    display: flex;
+    align-items: center;
+    gap: 0.9rem;
+    color: var(--arch-fg-soft, #565656);
+}
+.pp-hint i {
+    display: block;
+    width: 3.4rem;
+    height: 1px;
+    background: currentColor;
+    animation: pp-hint 2.4s var(--ease, cubic-bezier(.25,1,.5,1)) infinite;
+}
+@keyframes pp-hint {
+    0%   { transform: scaleX(0.2); transform-origin: 0 50%; }
+    55%  { transform: scaleX(1);   transform-origin: 0 50%; }
+    56%  { transform: scaleX(1);   transform-origin: 100% 50%; }
+    100% { transform: scaleX(0.2); transform-origin: 100% 50%; }
+}
+
+/* ---- A PHOTOGRAPH --------------------------------------------------- */
+/* THE FULL HEIGHT OF THE WINDOW, top edge to bottom edge, and as wide
+   as the photograph's own proportion makes it — a panorama held short
+   of becoming a corridor */
+.pp-fig { flex: none; position: relative; align-self: stretch; margin: 0 3.2vw 0 0; }
+.pp-fig.is-breath { margin-left: 3.2vw; }
+
+.pp-frame {
+    position: relative;
+    overflow: hidden;
+    height: 100%;
+    width: min(calc(100svh * var(--ar, 1.5)), 190svh);
+    background: #efefef;
+    will-change: clip-path, transform;
+}
+/* the plate is what the entrance scales; the photographs inside it are
+   what the scroll drifts, so the two motions never fight over one
+   transform */
+.pp-plate { position: absolute; inset: 0; will-change: transform; }
+.pp-plate img {
+    position: absolute;
+    inset: 0;
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+    transform: scale(1.12);   /* room for the parallax inside the frame */
+    will-change: transform;
+    user-select: none;
+    -webkit-user-drag: none;
+}
+/* THE GREY COPY. A static filter on its own layer — rastered once —
+   and what changes as the photograph crosses into the right of the
+   screen is only its OPACITY. Animating `filter` itself would repaint a
+   two-thousand-pixel photograph every frame; the opacity of one that was
+   greyed once costs the compositor nothing. */
+.pp-plate img.pp-grey { filter: grayscale(1) contrast(1.04); will-change: opacity, transform; }
+
+/* the index under each photograph has no room below a full-height
+   frame; the bar already counts them */
+.pp-cap { display: none; }
+.pp-cap-unused {
+    position: absolute;
+    left: 0; top: 100%;
+    margin-top: 0.85rem;
+    display: flex;
+    gap: 1.1rem;
+    color: var(--arch-fg-soft, #565656);
+    white-space: nowrap;
+}
+.pp-cap b { font-weight: 400; color: var(--arch-fg, #000); }
+
+/* ---- THE DATA ------------------------------------------------------- */
+.pp-spec { width: clamp(18rem, 30vw, 34rem); margin: 0 6vw 0 4vw; }
+.pp-stats {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    column-gap: clamp(1.4rem, 2.6vw, 3rem);
+}
+.pp-st { position: relative; padding: 0.95rem 0 1.5rem; }
+/* the rule above each value is drawn in, left to right */
+.pp-st > i {
+    position: absolute;
+    left: 0; right: 0; top: 0;
+    height: 1px;
+    background: var(--arch-border, rgba(0,0,0,.14));
+    transform-origin: 0 50%;
+}
+.pp-st-l { display: block; color: var(--arch-fg-soft, #565656); }
+.pp-st-v {
+    display: block;
+    margin-top: 0.4rem;
+    font-weight: 500;
+    font-variation-settings: 'wdth' 100, 'wght' 500;
+    font-size: clamp(1.3rem, 2vw, 2.25rem);
+    line-height: 1.05;
+    letter-spacing: -0.02em;
+    font-variant-numeric: tabular-nums;
+}
+
+/* ---- A PARAGRAPH ---------------------------------------------------- */
+.pp-text { width: clamp(17rem, 26vw, 30rem); margin: 0 5vw 0 2vw; }
+.pp-par {
+    margin: 0;
+    font-weight: 300;
+    font-size: clamp(1.02rem, 1.22vw, 1.3rem);
+    line-height: 1.5;
+    letter-spacing: -0.005em;
+    max-width: 34ch;
+}
+
+/* ---- THE MATERIALS : three squares out of the project's own photographs */
+.pp-mat {
+    margin: 0 6vw 0 4vw;
+    justify-content: space-between;
+    /* the squares stand on the baseline; their captions hang below it */
+    padding-bottom: var(--pp-base);
+}
+.pp-sws { display: flex; align-items: flex-end; gap: clamp(0.7rem, 1.1vw, 1.3rem); }
+.pp-sw {
+    position: relative;
+    width: clamp(6.5rem, 9.5vw, 11.5rem);
+    aspect-ratio: 1;
+    flex: none;
+}
+.pp-sw .pp-frame { width: 100%; height: 100%; }
+.pp-sw .pp-plate img { transform: none; }
+.pp-sw-cap {
+    position: absolute;
+    left: 0; top: 100%;
+    margin-top: 0.85rem;
+    display: flex;
+    flex-direction: column;
+    gap: 0.25rem;
+    color: var(--arch-fg-soft, #565656);
+    white-space: nowrap;
+}
+.pp-sw-cap b { font-weight: 400; color: var(--arch-fg, #000); }
+/* the measured colour, as a chip the size of a letter */
+.pp-sw-cap em {
+    font-style: normal;
+    display: inline-flex;
+    align-items: center;
+    gap: 0.45rem;
+}
+.pp-sw-cap em::before {
+    content: '';
+    width: 0.62rem; height: 0.62rem;
+    background: var(--c);
+    box-shadow: inset 0 0 0 1px rgba(0,0,0,.08);
+}
+
+/* ---- THE END : the next project, and nothing explaining it ---------- */
+.pp-end {
+    width: clamp(20rem, 44vw, 48rem);
+    margin-left: 5vw;
+    justify-content: flex-end;
+    padding-top: 0;
+    padding-bottom: var(--pp-base);
+    align-self: stretch;
+    display: flex;
+    flex-direction: column;
+    flex: none;
+}
+.pp-next {
+    appearance: none;
+    background: none;
+    border: 0;
+    padding: 0;
+    text-align: left;
+    color: inherit;
+    cursor: pointer;
+    font: inherit;
+}
+.pp-next-label { display: block; color: var(--arch-fg-soft, #565656); margin-bottom: 1rem; }
+.pp-next .pp-name {
+    /* the fallback; the next project's name is set inline at the size its
+       own title will stand at, so it can travel into it unscaled */
+    font-size: clamp(2.4rem, 5.8vw, 6.4rem);
+}
+/* under the pointer only the label answers : the name keeps its exact
+   shape, because it is about to become a title */
+.pp-next-label { transition: color .5s var(--ease, cubic-bezier(.25,1,.5,1)); }
+.pp-next:hover .pp-next-label,
+.pp-next:focus-visible .pp-next-label { color: var(--arch-fg, #000); }
+.pp-next:focus-visible { outline: none; }
+
+/* ---- PROGRESS : one hairline ---------------------------------------- */
+.pp-progress {
+    position: absolute;
+    left: var(--gutter, 4vw);
+    right: var(--gutter, 4vw);
+    bottom: calc(var(--pp-base) * 0.36);
+    height: 1px;
+    background: rgba(255,255,255,.2);
+    mix-blend-mode: difference;
+    z-index: 3;
+    pointer-events: none;
+}
+.pp-progress i {
+    display: block;
+    height: 100%;
+    background: #fff;
+    transform: scaleX(0);
+    transform-origin: 0 50%;
+    will-change: transform;
+}
+
+/* ---- THE RAIL : one small object that says everything -------------
+   The project's name, a map of the whole sheet, and the way out. On the
+   map each photograph is a block that fills in as it takes its colour,
+   each block of words a hairline, and a frame marks what is on screen. */
+.pp-rail {
+    position: absolute;
+    left: 0; right: 0;
+    bottom: clamp(1rem, 3.2svh, 2rem);
+    margin: 0 auto;
+    width: max-content;
+    z-index: 3;
+    display: flex;
+    align-items: center;
+    gap: 1.2rem;
+    padding: 0.6rem 0.75rem 0.6rem 1rem;
+    /* solid, not frosted : a backdrop blur is recomputed on every frame
+       the sheet moves under it */
+    background: rgba(255,255,255,.96);
+    box-shadow: 0 0 0 1px var(--arch-border, rgba(0,0,0,.14));
+    font-family: var(--font-mono, 'IBM Plex Mono', ui-monospace, monospace);
+    font-size: var(--t-micro, 0.72rem);
+    letter-spacing: var(--tr-caps, 0.05em);
+    text-transform: uppercase;
+    color: var(--arch-fg, #000);
+    cursor: default;
+}
+.pp-rail-name { display: flex; gap: 0.75rem; white-space: nowrap; }
+.pp-rail-name span { color: var(--arch-fg-soft, #565656); }
+.pp-map {
+    position: relative;
+    width: clamp(7rem, 11vw, 10.5rem);
+    height: 12px;
+    cursor: pointer;
+}
+.pp-map-in b {
+    position: absolute;
+    top: 0; bottom: 0;
+    background: var(--arch-fg, #000);
+    opacity: 0.2;
+}
+.pp-map-in b.is-word { top: 50%; bottom: auto; height: 1px; margin-top: -0.5px; opacity: 0.45; }
+.pp-map-win {
+    position: absolute;
+    left: 0; top: -4px; bottom: -4px;
+    box-shadow: 0 0 0 1px var(--arch-fg, #000);
+    pointer-events: none;
+    will-change: transform;
+}
+.pp-rail .pp-close { color: var(--arch-fg, #000); margin: 0; padding: 0.2rem 0.25rem; }
+
+/* ---- the italic over the palette: the room's own Archivo, in its
+   italic, set light and grey across the full width of the swatches.
+   `width: 0; min-width: 100%` lets it take the row's width without
+   ever widening the block to one long line. */
+.pp-note {
+    margin: 0 0 2.4rem;
+    width: 0;
+    min-width: 100%;
+    font-family: var(--font-sans, 'Archivo', Helvetica, Arial, sans-serif);
+    font-style: italic;
+    font-weight: 300;
+    font-variation-settings: 'wdth' 100, 'wght' 300;
+    font-size: clamp(1.35rem, 2vw, 2.35rem);
+    line-height: 1.16;
+    letter-spacing: -0.02em;
+    color: #767676;
+    text-wrap: pretty;
+}
+.pp-note .pp-wd { padding-right: 0.12em; margin-right: -0.12em; }
+.pp-par + .pp-par { margin-top: 1.1em; }
+.pp-text.is-lead .pp-par {
+    font-size: clamp(1.25rem, 1.6vw, 1.7rem);
+    line-height: 1.36;
+    letter-spacing: -0.012em;
+    max-width: 26ch;
+}
+
+/* while it is open, nothing underneath takes the pointer or the wheel */
+body.pp-open #subsite-architecture { pointer-events: none; }
+
+/* ---------------------------------------------------------------
+   NARROW — the sheet runs down instead of across. Same order, same
+   two rules turned into a column; each photograph takes the full width
+   at its own proportion and the colour comes in from the bottom third.
+   --------------------------------------------------------------- */
+@media (max-width: 900px) {
+    #pp { cursor: auto; }
+    .pp-count { display: none; }
+    .pp-track {
+        flex-direction: column;
+        align-items: stretch;
+        width: 100%;
+        height: auto;
+        padding: 17svh var(--gutter, 5vw) 16svh;
+    }
+    .pp-hang { padding-top: 0; padding-bottom: 0; }
+    .pp-title, .pp-spec, .pp-text, .pp-mat, .pp-end { width: auto; margin: 0 0 11svh; }
+    .pp-title { transform: none !important; }
+    .pp-fig, .pp-fig.is-breath { margin: 0 0 12svh; }
+    .pp-frame, .pp-fig.is-cover .pp-frame { width: 100%; height: auto; aspect-ratio: var(--ar, 1.5); }
+    .pp-sws { gap: 3vw; }
+    .pp-sw { width: calc((100% - 9vw) / 4); }
+    .pp-mat { padding-bottom: 3.6rem; }
+    .pp-end { margin: 4svh 0 0; padding-bottom: 0; }
+    .pp-progress { bottom: 3.5svh; }
+}
+
+@media (prefers-reduced-motion: reduce) {
+    .pp-hint i { animation: none; transform: scaleX(1); }
+    .pp-next-label, .pp-close::after { transition: none; }
+}

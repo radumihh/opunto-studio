@@ -1,0 +1,20 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "photo.schema.json",
+  "title": "Fotografie",
+  "description": "O imagine încărcată. Toate câmpurile în afară de `alt` și `spaced` sunt completate de server la upload.",
+  "type": "object",
+  "required": ["id", "src", "width", "height"],
+  "properties": {
+    "id":     { "type": "string", "readOnly": true },
+    "src":    { "type": "string", "readOnly": true, "description": "/uploads/<id>.avif — varianta mare, max 2560px pe latura lungă." },
+    "sm":     { "type": "string", "readOnly": true, "description": "/uploads/<id>.sm.webp — miniatura (720px), pentru admin și peretele Concepts." },
+    "width":  { "type": "integer", "minimum": 1, "readOnly": true },
+    "height": { "type": "integer", "minimum": 1, "readOnly": true },
+    "bytes":  { "type": "integer", "readOnly": true },
+    "originalBytes": { "type": "integer", "readOnly": true, "description": "Mărimea fișierului încărcat, înainte de optimizare." },
+    "alt":    { "title": "Ce se vede în poză", "type": "string", "maxLength": 200 },
+    "spaced": { "title": "Spațiu mai mare înainte", "type": "boolean" }
+  },
+  "additionalProperties": false
+}

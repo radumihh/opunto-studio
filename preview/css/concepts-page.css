@@ -1,0 +1,401 @@
+/* COPIED FROM zx-final/css/concepts-x.css — the room's tokens and base (lines 30-62, 76-99) and PART TWO, the project page (2012-2354). Keep in step with the site: re-copy, do not edit here. */
+:root {
+    --cx-s0: #060606;  --cx-s1: #0b0b0b;  --cx-s2: #101010;  --cx-s3: #161616;  --cx-s4: #1e1e1e;
+
+    --cx-ink:   #ece7df;
+    /* full / 0.72 / 0.52. Both steps clear 4.5:1 on --cx-s0 at the sizes they
+       are actually used at. */
+    --cx-ink-2: rgba(236, 231, 223, 0.72);
+    --cx-ink-3: rgba(236, 231, 223, 0.52);
+    --cx-line:  rgba(236, 231, 223, 0.12);
+
+    /* ONE signal. It appears only where something is live: the cursor over a
+       target, the drawn underlines, a hovered row, the progress hairline. */
+    --cx-sig: #b8c43e;
+    --cx-sig-soft: rgba(184, 196, 62, 0.16);
+
+    --cx-serif: 'Instrument Serif', 'Times New Roman', serif;
+    --cx-sans:  'Geist', 'Helvetica Neue', Helvetica, Arial, sans-serif;
+    --cx-mono:  'Geist Mono', ui-monospace, SFMono-Regular, Menlo, monospace;
+    --cx-kin:   'Anybody', 'Arial Narrow', Arial, sans-serif;
+
+    --cx-t-mega: clamp(3.2rem, 15vw, 17rem);
+    --cx-t-disp: clamp(2.3rem, 7.2vw, 7.5rem);
+    --cx-t-mid:  clamp(1.7rem, 4vw, 4rem);
+    --cx-t-lead: clamp(1.2rem, 2.2vw, 2.15rem);
+    --cx-t-body: clamp(0.92rem, 1vw, 1.06rem);
+    --cx-t-micro: 0.685rem;
+
+    --cx-tr-micro: 0.15em;
+    --cx-edge: clamp(1.1rem, 3.6vw, 3.2rem);
+    --cx-room: clamp(5.5rem, 15vh, 11rem);
+    --cx-ease: cubic-bezier(0.22, 1, 0.36, 1);
+}
+
+#subsite-concepts,
+.half[data-side="right"] {
+    font-family: var(--cx-sans); font-weight: 300;
+    font-size: var(--cx-t-body); line-height: 1.45;
+}
+body[data-side="right"]::-webkit-scrollbar { width: 9px; }
+body[data-side="right"]::-webkit-scrollbar-track { background: var(--cx-s0); }
+body[data-side="right"]::-webkit-scrollbar-thumb { background: var(--cx-s4); }
+body[data-side="right"]::-webkit-scrollbar-thumb:hover { background: #2b2b2b; }
+
+/* the room's own ground, which is a step darker than the placeholder the
+   two doors shared while both of them were empty */
+#subsite-concepts {
+    background: var(--cx-s0);
+    color: var(--cx-ink);
+    min-height: auto;
+}
+
+/* the element resets the room brought with it, kept inside the room */
+#subsite-concepts ::selection { background: var(--cx-sig); color: #060606; }
+#subsite-concepts :focus-visible { outline: 2px solid var(--cx-sig); outline-offset: 3px; }
+#subsite-concepts :is(img, video, canvas, svg) { display: block; max-width: 100%; }
+#subsite-concepts a { color: inherit; text-decoration: none; }
+#subsite-concepts button { font: inherit; color: inherit; background: none; border: 0; cursor: pointer; }
+/* ============================================================================
+   PART TWO — THE PROJECT, FULL SCREEN, READ SIDEWAYS
+
+   The architecture project page, in this room's voice. One long sheet:
+   the name; the photographs at the full height of the window; the data,
+   the brief, the one line and the approach set between them; the next
+   project at the end. TWO LINES RUN THE WHOLE SHEET — words hang from
+   --pj-top and stand on --pj-base — so blocks of different sizes still
+   read as set rather than scattered. Two of the five photographs step in
+   to those same two lines, which is the rhythm of the run: full, full,
+   held, full, held.
+
+   The ground is the room's near-black, and a photograph DEVELOPS out of
+   it as it crosses into the window: a plate of that black over it, whose
+   opacity is the only thing that changes. The rail at the foot is the
+   architecture page's rail cut in this room's material.
+   ============================================================================ */
+#subsite-concepts .pj {
+    --pj-top: 19svh;             /* the rule words hang from */
+    --pj-base: 15svh;            /* the line they stand on */
+    --pj-gap: 3.2vw;
+    position: fixed; inset: 0;
+    z-index: 91;                 /* over the grain, under the menu and cursor */
+    background: var(--cx-s0);
+    color: var(--cx-ink);
+    display: none;
+    will-change: clip-path;
+}
+#subsite-concepts .pj.on { display: block; }
+
+/* ---- THE RUN --------------------------------------------------------
+   ON A POINTER, NOTHING SCROLLS: the track is translated, which lives on
+   the compositor. ON A TOUCHSCREEN the native scroller stays, because
+   nothing hand-rolled beats the momentum a phone already has. */
+.pj-scroll {
+    position: absolute; inset: 0;
+    overflow-x: auto; overflow-y: hidden;
+    scrollbar-width: none; -ms-overflow-style: none;
+    overscroll-behavior: contain;
+    will-change: transform;
+}
+.pj-scroll::-webkit-scrollbar { display: none; }
+.pj.is-fine .pj-scroll { overflow: hidden; cursor: grab; }
+.pj.is-fine.is-drag .pj-scroll { cursor: grabbing; }
+.pj-track {
+    position: absolute; left: 0; top: 0; height: 100%;
+    display: flex; align-items: stretch;
+    padding: 0 var(--cx-edge);
+    will-change: transform;
+}
+.pj.is-drag .pj-track { user-select: none; }
+
+/* the mask every line of type rises out of */
+.pj-m { display: block; overflow: hidden; padding-bottom: .06em; margin-bottom: -.06em; }
+.pj-m > span { display: block; will-change: transform; }
+.pj-in { will-change: transform, opacity; }
+
+/* ---- THE VOICES ------------------------------------------------------ */
+.pj-fig {
+    font-family: var(--cx-kin);
+    font-variation-settings: 'wdth' 58, 'wght' 200;
+    font-size: clamp(2.6rem, 5.2vw, 5rem); line-height: .78;
+    letter-spacing: 0; color: var(--cx-sig);
+    font-variant-numeric: tabular-nums lining-nums;
+}
+.pj-label {
+    font-family: var(--cx-mono);
+    font-size: clamp(.64rem, .74vw, .72rem);
+    letter-spacing: 0; text-transform: lowercase;
+    color: var(--cx-ink-3);
+    font-variant-numeric: tabular-nums;
+}
+.pj-val {
+    font-family: var(--cx-sans); font-weight: 400;
+    font-size: clamp(.82rem, .95vw, .95rem); letter-spacing: 0;
+    color: var(--cx-ink-2); font-variant-numeric: tabular-nums;
+}
+/* a block of words: hung from the top rule, its foot on the base line */
+.pj-hang {
+    flex: none; position: relative;
+    padding-top: var(--pj-top); padding-bottom: var(--pj-base);
+    display: flex; flex-direction: column;
+}
+.pj-kick {
+    display: flex; gap: .9rem; align-items: baseline;
+    margin-bottom: clamp(1.1rem, 2.8vh, 2.1rem);
+}
+/* the index is the room's green */
+.pj-no {
+    font-family: var(--cx-mono); font-size: clamp(.64rem, .74vw, .72rem);
+    color: var(--cx-sig); font-variant-numeric: tabular-nums;
+}
+.pj-kick .pj-no { order: -1; }
+
+/* ---- THE NAME -------------------------------------------------------- */
+.pj-title {
+    width: clamp(20rem, 34vw, 40rem);
+    margin-right: 6vw;
+    justify-content: space-between;
+}
+.pj-name {
+    display: block; margin: 0;
+    font-family: var(--cx-kin); font-weight: 400;
+    font-variation-settings: 'wdth' 112, 'wght' 380;
+    font-size: clamp(3rem, 8.6vw, 9.8rem);
+    line-height: .9; letter-spacing: -.03em;
+    color: var(--cx-ink); white-space: nowrap;
+}
+.pj-tfoot { display: flex; align-items: flex-end; gap: clamp(1.4rem, 2.6vw, 2.8rem); }
+.pj-pair { display: grid; gap: .45em; }
+.pj-hint {
+    margin-left: auto;
+    font-family: var(--cx-mono); font-size: 10px;
+    letter-spacing: .18em; text-transform: uppercase; color: var(--cx-sig);
+    display: flex; gap: .8em; align-items: center; white-space: nowrap;
+}
+.pj-hint i { display: block; width: 26px; height: 1px; background: currentColor;
+    transform-origin: 0 50%; animation: cx-cue 2.4s var(--cx-ease) infinite; }
+
+/* ---- A PHOTOGRAPH ----------------------------------------------------
+   THE FULL HEIGHT OF THE WINDOW, as wide as its own proportion makes it,
+   held short of a corridor. The plate is what the scroll drifts and
+   scales; the frame's clip is what opens; the dark over it is what
+   develops. Three properties, three elements, nothing fighting. */
+.pj-pic { flex: none; position: relative; margin: 0 var(--pj-gap) 0 0; }
+.pj-frame {
+    position: relative; overflow: hidden;
+    height: 100svh;
+    width: min(calc(100svh * var(--ar, 1.5)), 150svh);
+    background: var(--cx-s2);
+    will-change: clip-path;
+}
+.pj-plate { position: absolute; inset: 0; transform: scale(1.14); will-change: transform; }
+.pj-plate img {
+    position: absolute; inset: 0; width: 100%; height: 100%;
+    object-fit: cover; display: block;
+    /* the room's grade, set once: a touch of contrast and a little less
+       colour than the file, so the set reads as one body of work */
+    filter: contrast(1.05) saturate(.88);
+    user-select: none; -webkit-user-drag: none;
+}
+.pj-dev {
+    position: absolute; inset: 0; display: block;
+    background: var(--cx-s0); opacity: .86;
+    pointer-events: none; will-change: opacity;
+}
+/* HELD: stepped in to the two lines the words use, its number over it */
+.pj-pic.is-inset { margin-left: calc(var(--pj-gap) * 0.6); }
+.pj-pic.is-inset .pj-frame {
+    margin-top: var(--pj-top);
+    height: calc(100svh - var(--pj-top) - var(--pj-base));
+    width: calc((100svh - var(--pj-top) - var(--pj-base)) * var(--ar, 1.5));
+}
+.pj-cap {
+    position: absolute; left: 0; bottom: calc(100% - var(--pj-top) + .9rem);
+    display: flex; gap: .7rem; align-items: baseline;
+    font-family: var(--cx-mono); font-size: clamp(.64rem, .74vw, .72rem);
+    color: var(--cx-ink-3); font-variant-numeric: tabular-nums; white-space: nowrap;
+}
+.pj-cap b { font-weight: 400; color: var(--cx-sig); }
+
+/* ---- THE DATA : two columns of quantities, each under a drawn rule --- */
+.pj-spec { width: clamp(19rem, 30vw, 34rem); margin: 0 5.4vw 0 2.2vw; }
+.pj-stats {
+    display: grid; grid-template-columns: 1fr 1fr;
+    column-gap: clamp(1.4rem, 2.6vw, 3rem);
+}
+.pj-st { position: relative; padding: .9rem 0 1.35rem; min-width: 0; }
+.pj-st.is-wide { grid-column: 1 / -1; }
+.pj-st > i {
+    position: absolute; left: 0; right: 0; top: 0; height: 1px;
+    background: var(--cx-line); transform-origin: 0 50%;
+}
+.pj-st-v {
+    display: block; margin-top: .45rem;
+    font-family: var(--cx-kin); font-weight: 400;
+    font-variation-settings: 'wdth' 96, 'wght' 320;
+    font-size: clamp(1.15rem, 1.75vw, 1.95rem);
+    line-height: 1.02; letter-spacing: -.015em;
+    color: var(--cx-ink); font-variant-numeric: tabular-nums lining-nums;
+    white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
+}
+
+/* ---- THE WRITING ----------------------------------------------------- */
+.pj-text { margin: 0 5vw 0 2.2vw; }
+.pj-brief { width: clamp(19rem, 30vw, 34rem); }
+.pj-story {
+    margin: 0;
+    font-family: var(--cx-serif);
+    font-size: clamp(1.2rem, 1.62vw, 1.72rem);
+    line-height: 1.36; letter-spacing: -.006em;
+    color: var(--cx-ink-3); text-wrap: pretty;
+}
+/* the opening sentence at full strength: the tonal step is the only
+   ornament the paragraph gets */
+.pj-story .lead { color: var(--cx-ink); }
+
+/* THE ONE LINE: the project said once, large, in the serif's italic,
+   standing on the base line at the foot of its column */
+.pj-quote { width: clamp(19rem, 32vw, 38rem); margin: 0 5vw 0 3vw; }
+.pj-quote .pj-kick { margin-bottom: 0; }
+.pj-said {
+    margin: auto 0 0;
+    font-family: var(--cx-serif); font-style: italic;
+    font-size: clamp(1.7rem, 2.7vw, 3rem);
+    line-height: 1.08; letter-spacing: -.012em;
+    color: var(--cx-ink); text-wrap: balance;
+}
+.pj-said::first-letter { color: var(--cx-sig); }
+
+.pj-approach { width: clamp(17rem, 25vw, 29rem); }
+.pj-par {
+    margin: 0 0 1.1em;
+    font-family: var(--cx-sans); font-weight: 300;
+    font-size: clamp(.92rem, 1.05vw, 1.08rem); line-height: 1.62;
+    color: var(--cx-ink-2); max-width: 36ch; text-wrap: pretty;
+}
+.pj-scope {
+    list-style: none; margin: auto 0 0; padding: 0;
+    display: grid; gap: .5rem;
+}
+.pj-scope li {
+    font-family: var(--cx-kin); font-variation-settings: 'wdth' 100, 'wght' 330;
+    font-size: clamp(1rem, 1.3vw, 1.4rem); line-height: 1.1; letter-spacing: -.01em;
+    color: var(--cx-ink);
+}
+.pj-scope i {
+    display: inline-block; min-width: 2.4em; font-style: normal;
+    font-family: var(--cx-mono); font-size: .52em; vertical-align: .32em;
+    color: var(--cx-sig);
+}
+
+/* ---- THE END : the next project, and nothing explaining it ----------- */
+.pj-end {
+    width: clamp(20rem, 42vw, 46rem);
+    margin-left: 3vw;
+    justify-content: flex-end;
+}
+.pj-nextb {
+    appearance: none; background: none; border: 0; padding: 0; margin: 0;
+    font: inherit; color: inherit; text-align: left; cursor: pointer; display: block;
+}
+.pj-nextb .pj-kick { margin-bottom: 1rem; }
+.pj-foot-name { transition: color .45s var(--cx-ease); }
+.pj-go {
+    display: flex; gap: .8em; align-items: center; margin-top: 1.4rem;
+    font-family: var(--cx-mono); font-size: clamp(.64rem, .74vw, .72rem);
+    color: var(--cx-ink-3); text-transform: lowercase;
+}
+.pj-go i { display: block; width: 4.8rem; height: 1px; background: var(--cx-sig);
+    transform-origin: 0 50%; transform: scaleX(.35); transition: transform .6s var(--cx-ease); }
+.pj-nextb:hover .pj-foot-name,
+.pj-nextb:focus-visible .pj-foot-name { color: var(--cx-sig); }
+.pj-nextb:hover .pj-go i { transform: scaleX(1); }
+.pj-nextb:focus-visible { outline: none; }
+
+/* THE TURN: a plate of the ground, crossed over the sheet */
+.pj-wipe {
+    position: absolute; inset: 0; z-index: 3; display: block;
+    background: var(--cx-s0); visibility: hidden; pointer-events: none;
+    clip-path: inset(0% 0% 0% 100%); will-change: clip-path;
+}
+
+/* ---- THE RAIL : one small object that says everything ---------------
+   The number, the name, a map of the whole sheet, the frame on screen
+   and the way out. On the map every photograph is a block that fills in
+   as it develops and every block of words a hairline; the window is
+   drawn in the room's green. Solid, not frosted: a backdrop blur is
+   recomputed on every frame the sheet moves under it. */
+.pj-rail {
+    position: absolute; left: 0; right: 0;
+    bottom: clamp(1rem, 3.2svh, 2rem);
+    margin: 0 auto; width: max-content; max-width: calc(100vw - 2 * var(--cx-edge));
+    z-index: 4;
+    display: flex; align-items: center; gap: 1.15rem;
+    padding: .62rem .8rem .62rem .95rem;
+    background: rgba(11, 11, 11, .96);
+    box-shadow: 0 0 0 1px var(--cx-line);
+    font-family: var(--cx-mono); font-size: clamp(.64rem, .72vw, .7rem);
+    letter-spacing: 0; text-transform: lowercase;
+    color: var(--cx-ink); cursor: default;
+}
+.pj-rail-no { color: var(--cx-sig); font-variant-numeric: tabular-nums; }
+.pj-rail-name {
+    display: flex; gap: .75rem; white-space: nowrap;
+    font-family: var(--cx-sans); font-size: 1.08em; text-transform: none;
+}
+.pj-rail-name span { color: var(--cx-ink-3); font-family: var(--cx-mono); font-size: .92em; text-transform: lowercase; }
+.pj-map { position: relative; width: clamp(7rem, 11vw, 10.5rem); height: 12px; cursor: pointer; flex: none; }
+.pj-map-in b { position: absolute; top: 0; bottom: 0; background: var(--cx-ink); opacity: .22; }
+.pj-map-in b.is-word { top: 50%; bottom: auto; height: 1px; margin-top: -.5px; opacity: .4; }
+.pj-map-win {
+    position: absolute; left: 0; top: -4px; bottom: -4px;
+    box-shadow: 0 0 0 1px var(--cx-sig);
+    pointer-events: none; will-change: transform;
+}
+.pj-rail-n { color: var(--cx-ink-3); font-variant-numeric: tabular-nums; white-space: nowrap; }
+.pj-rail-n b { font-weight: 400; color: var(--cx-ink); }
+/* the way to the project either side, two arrows */
+.pj-steps { display: flex; gap: .15rem; margin: 0 -.2rem; }
+.pj-step {
+    appearance: none; background: none; border: 0; cursor: pointer;
+    width: 1.7rem; height: 1.5rem; padding: 0; display: grid; place-items: center;
+    color: var(--cx-ink-3); transition: color .25s var(--cx-ease);
+}
+.pj-step svg { width: 12px; height: 12px; fill: none; stroke: currentColor; stroke-width: 1.2; stroke-linecap: square;
+    transition: transform .45s var(--cx-ease); }
+.pj-step:hover, .pj-step:focus-visible { color: var(--cx-sig); outline: none; }
+.pj-step[data-pjstep="-1"]:hover svg { transform: translateX(-2px); }
+.pj-step[data-pjstep="1"]:hover svg { transform: translateX(2px); }
+.pj-close {
+    appearance: none; background: none; border: 0; cursor: pointer;
+    margin: 0; padding: .2rem .25rem; position: relative;
+    font-family: var(--cx-sans); font-weight: 400; font-size: 1.08em;
+    color: var(--cx-ink-2); transition: color .25s var(--cx-ease);
+}
+.pj-close::after {
+    content: ''; position: absolute; left: .25rem; right: .25rem; bottom: 0; height: 1px;
+    background: var(--cx-sig); transform: scaleX(0); transform-origin: 100% 50%;
+    transition: transform .4s var(--cx-ease);
+}
+.pj-close:hover, .pj-close:focus-visible { color: var(--cx-ink); outline: none; }
+.pj-close:hover::after, .pj-close:focus-visible::after { transform: scaleX(1); transform-origin: 0 50%; }
+
+/* ---- A PHONE : the same run, sized to it ------------------------------ */
+@media (max-width: 900px) {
+    #subsite-concepts .pj { --pj-top: 15svh; --pj-base: 17svh; --pj-gap: 4vw; }
+    .pj-title { width: 84vw; margin-right: 8vw; }
+    .pj-spec, .pj-brief, .pj-quote, .pj-approach { width: 80vw; margin: 0 8vw 0 4vw; }
+    .pj-end { width: 84vw; margin-left: 6vw; }
+    .pj-frame { height: 72svh; margin-top: 11svh; width: min(calc(72svh * var(--ar, 1.5)), 88vw); }
+    .pj-pic.is-inset .pj-frame { width: min(calc((100svh - var(--pj-top) - var(--pj-base)) * var(--ar, 1.5)), 80vw); }
+    .pj-hint { display: none; }
+    .pj-rail { gap: .8rem; padding: .55rem .6rem .55rem .75rem; }
+    .pj-rail-name span, .pj-rail-n { display: none; }
+    .pj-map { width: 5.5rem; }
+}
+@media (prefers-reduced-motion: reduce) {
+    .pj-m > span, .pj-in { transform: none !important; opacity: 1 !important; }
+    .pj-dev { opacity: 0 !important; }
+    .pj-hint i { animation: none; }
+}
+
