@@ -20,13 +20,12 @@ curl -fsSL https://raw.githubusercontent.com/radumihh/opunto-studio/main/deploy/
 sudo ADMIN_PASSWORD='parola-lunga' bash install.sh
 ```
 
-Scriptul face tot: actualizează sistemul, instalează Node 22, nginx și firewall-ul (SSH, HTTP), creează utilizatorul `opunto`, clonează repo-ul în `/opt/opunto-studio`, face build-ul și pornește serviciul systemd. La prima instalare aduce și proiectele cu pozele lor din `seed/`. La final îți afișează adresa: `http://<IP-ul VM-ului>`.
+Scriptul face tot: actualizează sistemul, instalează Node 22, nginx și firewall-ul (SSH, HTTP), creează utilizatorul `opunto`, clonează repo-ul în `/opt/opunto-studio`, face build-ul și pornește serviciul systemd. Proiectele (`data/db.json`) și pozele (`poze/`) sunt în repo, deci vin odată cu `git clone`. La final îți afișează adresa: `http://<IP-ul VM-ului>`.
 
-**Update:** `sudo bash /opt/opunto-studio/deploy/install.sh`. Aduce codul nou și repornește serviciul. Proiectele, pozele și parolele de pe server rămân neatinse.
+**Update:** `sudo bash /opt/opunto-studio/deploy/install.sh`. Aduce codul nou și repornește serviciul. Proiectele, pozele și parolele de pe VM rămân cele de pe VM.
 
-**Proiectele din seed:** `npm run snapshot` copiază proiectele și pozele de acum în `seed/`, fără parole. Commit-ul lor intră la următoarea instalare nouă.
 
-**Backup:** copiază `data/` și `poze/`. Din Setări → Backup poți descărca și un JSON cu toate proiectele. La fiecare scriere, versiunea anterioară a bazei rămâne în `data/db.json.bak`.
+**Backup:** copiază `data/` și `poze/`. Parolele stau separat, în `data/settings.json`, care nu intră în repo. Din Setări → Backup poți descărca și un JSON cu toate proiectele. La fiecare scriere, versiunea anterioară a bazei rămâne în `data/db.json.bak`.
 
 Dacă `HOST` nu e `127.0.0.1` și nu există o parolă de admin, serverul refuză să pornească.
 

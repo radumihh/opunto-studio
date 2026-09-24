@@ -1,9 +1,9 @@
 node_modules/
 dist/
-data/*.json
+data/settings.json
+data/*.bak
 data/*.tmp
-poze/*
-!poze/.gitkeep
+poze/_incoming/
 !data/.gitkeep
 .DS_Store
 *.log

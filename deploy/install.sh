@@ -6,7 +6,8 @@
 #   sudo ADMIN_PASSWORD='parola-lunga' bash install.sh
 #
 #   ADMIN_PASSWORD  parola de intrare în Studio (doar la prima instalare, min. 8 caractere)
-#   Studio răspunde apoi pe http://<IP-ul VM-ului>, cu proiectele și pozele din seed/.
+#   Studio răspunde apoi pe http://<IP-ul VM-ului>, cu proiectele (data/db.json)
+#   și pozele (poze/) care vin din repo.
 #
 # Update (aceeași comandă, fără variabile): sudo bash /opt/opunto-studio/deploy/install.sh
 #   actualizează sistemul, codul, dependențele și repornește. Proiectele, pozele,
@@ -53,8 +54,14 @@ ufw status | sed 's/^/   /'
 say "Utilizator și cod"
 id "$APP_USER" >/dev/null 2>&1 || useradd -r -m -d "$APP_DIR" -s /usr/sbin/nologin "$APP_USER"
 if [ -d "$APP_DIR/.git" ]; then
+    # the projects and photos on this server are the live ones: keep them
+    keep=$(mktemp -d)
+    cp -a "$APP_DIR/data" "$APP_DIR/poze" "$keep/"
     sudo -u "$APP_USER" git -C "$APP_DIR" fetch --depth 1 origin "$BRANCH"
     sudo -u "$APP_USER" git -C "$APP_DIR" reset --hard "origin/$BRANCH"
+    rm -rf "$APP_DIR/data" "$APP_DIR/poze"
+    cp -a "$keep/data" "$keep/poze" "$APP_DIR/"
+    rm -rf "$keep"
 else
     # the home folder exists (useradd -m) but is not a repo yet
     tmp=$(mktemp -d)
@@ -70,7 +77,7 @@ sudo -u "$APP_USER" npm ci --no-audit --no-fund
 sudo -u "$APP_USER" npm run build
 
 if [ "$FIRST" = 1 ]; then
-    say "Configurare (.env) și proiectele din seed/"
+    say "Configurare (.env)"
     cat > .env <<EOF
 PORT=$PORT
 HOST=127.0.0.1
@@ -80,8 +87,6 @@ PUBLIC_ORIGINS=*
 EOF
     chmod 600 .env
     mkdir -p data poze
-    [ -f data/db.json ] || cp seed/db.json data/db.json
-    cp -rn seed/poze/. poze/
     chown -R "$APP_USER:$APP_USER" .env data poze
 fi
 

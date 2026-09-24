@@ -10,8 +10,7 @@
     "build": "vite build",
     "start": "node server.js",
     "test": "node --test test/api.test.js",
-    "setup": "npm ci && npm run build",
-    "snapshot": "node scripts/snapshot.js"
+    "setup": "npm ci && npm run build"
   },
   "engines": {
     "node": ">=20"
