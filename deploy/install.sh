@@ -3,11 +3,10 @@
 #
 # Prima instalare (ca root / cu sudo):
 #   curl -fsSL https://raw.githubusercontent.com/radumihh/opunto-studio/main/deploy/install.sh -o install.sh
-#   sudo ADMIN_PASSWORD='parola-lunga' DOMAIN=studio.opunto.ro EMAIL=tu@opunto.ro bash install.sh
+#   sudo ADMIN_PASSWORD='parola-lunga' bash install.sh
 #
-#   ADMIN_PASSWORD  parola de intrare în Studio (obligatorie la prima instalare, min. 8 caractere)
-#   DOMAIN          opțional; fără el, Studio răspunde pe IP-ul VM-ului (http)
-#   EMAIL           opțional; cu DOMAIN + EMAIL se ia certificat HTTPS (Let's Encrypt)
+#   ADMIN_PASSWORD  parola de intrare în Studio (doar la prima instalare, min. 8 caractere)
+#   Studio răspunde apoi pe http://<IP-ul VM-ului>, cu proiectele și pozele din seed/.
 #
 # Update (aceeași comandă, fără variabile): sudo bash /opt/opunto-studio/deploy/install.sh
 #   actualizează sistemul, codul, dependențele și repornește. Proiectele, pozele,
@@ -45,9 +44,9 @@ if ! command -v node >/dev/null || [ "$(node -p 'process.versions.node.split("."
 fi
 node -v
 
-say "Firewall: SSH + HTTP/HTTPS"
+say "Firewall: SSH + HTTP"
 ufw allow OpenSSH >/dev/null
-ufw allow 'Nginx Full' >/dev/null
+ufw allow 'Nginx HTTP' >/dev/null
 ufw --force enable
 ufw status | sed 's/^/   /'
 
@@ -96,19 +95,12 @@ systemctl restart opunto-studio
 say "nginx"
 if [ "$FIRST" = 1 ] || [ ! -f /etc/nginx/sites-available/opunto-studio ]; then
     cp deploy/nginx.conf /etc/nginx/sites-available/opunto-studio
-    sed -i "s|server_name .*;|server_name ${DOMAIN:-_};|" /etc/nginx/sites-available/opunto-studio
+    sed -i "s|server_name .*;|server_name _;|" /etc/nginx/sites-available/opunto-studio
     ln -sf /etc/nginx/sites-available/opunto-studio /etc/nginx/sites-enabled/opunto-studio
     rm -f /etc/nginx/sites-enabled/default
 fi
 nginx -t
 systemctl reload nginx
-
-if [ -n "${DOMAIN:-}" ] && [ -n "${EMAIL:-}" ]; then
-    say "HTTPS pentru $DOMAIN"
-    apt-get install -y certbot python3-certbot-nginx
-    certbot --nginx -d "$DOMAIN" -m "$EMAIL" --agree-tos --non-interactive --redirect || \
-        echo "Certificatul nu s-a putut lua (DNS-ul pentru $DOMAIN arată spre acest VM?). Rulează din nou mai târziu."
-fi
 
 say "Verificare"
 for i in $(seq 1 30); do curl -fsS "http://127.0.0.1:$PORT/api/auth/me" >/dev/null 2>&1 && break; sleep 1; done
@@ -121,7 +113,7 @@ else
 fi
 ip=$(curl -fsS -4 https://ifconfig.me 2>/dev/null || hostname -I | awk '{print $1}')
 echo
-echo "   Gata:  ${DOMAIN:+https://$DOMAIN  sau  }http://$ip"
-echo "   API public pentru y-final: ${DOMAIN:+https://$DOMAIN}${DOMAIN:-http://$ip}/api/public/arch"
+echo "   Gata:  http://$ip   (parola: cea din ADMIN_PASSWORD)"
+echo "   API public pentru y-final: http://$ip/api/public/arch"
 echo "   Jurnal: journalctl -u opunto-studio -f"
 echo "   Update: sudo bash $APP_DIR/deploy/install.sh"

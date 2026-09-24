@@ -17,10 +17,10 @@ Pe un Ubuntu 22.04/24.04 curat, ca root:
 
 ```bash
 curl -fsSL https://raw.githubusercontent.com/radumihh/opunto-studio/main/deploy/install.sh -o install.sh
-sudo ADMIN_PASSWORD='parola-lunga' DOMAIN=studio.opunto.ro EMAIL=tu@opunto.ro bash install.sh
+sudo ADMIN_PASSWORD='parola-lunga' bash install.sh
 ```
 
-Scriptul face tot: actualizează sistemul, instalează Node 22, nginx și firewall-ul (SSH, HTTP, HTTPS), creează utilizatorul `opunto`, clonează repo-ul în `/opt/opunto-studio`, face build-ul și pornește serviciul systemd. La prima instalare aduce și proiectele cu pozele lor din `seed/`. `DOMAIN` și `EMAIL` sunt opționale: cu ele primești HTTPS de la Let's Encrypt, fără ele Studio răspunde pe IP.
+Scriptul face tot: actualizează sistemul, instalează Node 22, nginx și firewall-ul (SSH, HTTP), creează utilizatorul `opunto`, clonează repo-ul în `/opt/opunto-studio`, face build-ul și pornește serviciul systemd. La prima instalare aduce și proiectele cu pozele lor din `seed/`. La final îți afișează adresa: `http://<IP-ul VM-ului>`.
 
 **Update:** `sudo bash /opt/opunto-studio/deploy/install.sh`. Aduce codul nou și repornește serviciul. Proiectele, pozele și parolele de pe server rămân neatinse.
 
