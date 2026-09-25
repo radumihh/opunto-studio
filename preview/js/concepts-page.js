@@ -50,7 +50,9 @@
             year: p.year || '',
             type: p.type || '',
             notes: paras(p.approach),
-            scope: (p.scope || []).filter(Boolean)
+            scope: (p.scope || []).filter(Boolean),
+            /* ADAPTED: the width the client picked for the texts */
+            tw: p.textWidth === 'narrow' || p.textWidth === 'wide' ? ' is-' + p.textWidth : ''
         };
     }
     window.__cxSetProjects = function (list) { M.wall = list.map(entry); };
@@ -215,7 +217,7 @@
             fig(1, false) +
 
             ((a.story || a.desc) ?   /* ADAPTED: left out when empty */
-            '<div class="pj-hang pj-text pj-brief" data-enter="text">' +
+            '<div class="pj-hang pj-text pj-brief' + a.tw + '" data-enter="text">' +
                 kick('the brief') +
                 '<p class="pj-story">' + story(a) + '</p>' +
             '</div>' : '') +
@@ -223,7 +225,7 @@
             fig(2, true) +
 
             (a.desc ?
-            '<div class="pj-hang pj-quote" data-enter="text">' +
+            '<div class="pj-hang pj-quote' + a.tw + '" data-enter="text">' +
                 kick('in one line') +
                 '<p class="pj-said">' + esc(a.desc) + '</p>' +
             '</div>' : '') +
@@ -232,7 +234,7 @@
 
             /* ADAPTED: the project's own approach and scope, no placeholder */
             ((a.notes.length || a.scope.length) ?
-            '<div class="pj-hang pj-text pj-approach" data-enter="text">' +
+            '<div class="pj-hang pj-text pj-approach' + a.tw + '" data-enter="text">' +
                 kick('approach') +
                 a.notes.map(function (t) { return '<p class="pj-par">' + esc(t) + '</p>'; }).join('') +
                 (a.scope.length ? '<ol class="pj-scope">' + a.scope.map(function (s, k) {

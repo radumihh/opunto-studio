@@ -75,7 +75,7 @@
             stats: (q.facts || []).filter(function (f) { return f.label || f.value; })
                 .map(function (f) { return [f.label, f.value]; }),
             texts: (q.texts || []).map(function (t) {
-                return { label: t.heading || '', ps: paras(t.body), after: t.afterPhoto || null };
+                return { label: t.heading || '', ps: paras(t.body), after: t.afterPhoto || null, w: t.width || '' };
             }).filter(function (t) { return t.ps.length || t.label; }),
             mats: (mats.items || []).filter(function (m) { return m.name || m.image; })
                 .map(function (m) { return { name: m.name || '', src: m.image ? m.image.src : '' }; }),
@@ -326,7 +326,8 @@
                    '</div>';
         }
         function para(g) {
-            return '<div class="pp-hang pp-text' + (g.lead ? ' is-lead' : '') + '" data-enter="text">' +
+            /* ADAPTED: the width the client picked for this text (narrow / wide) */
+            return '<div class="pp-hang pp-text' + (g.lead ? ' is-lead' : '') + (g.w === 'narrow' || g.w === 'wide' ? ' is-' + g.w : '') + '" data-enter="text">' +
                        '<div class="pp-kick pp-in"><span>' + esc(g.label) + '</span></div>' +
                        g.ps.map(function (t) { return '<p class="pp-par pp-in">' + esc(t) + '</p>'; }).join('') +
                    '</div>';
@@ -354,7 +355,7 @@
            n), or where the site put its three: after the 3rd, 6th, 9th */
         var AUTO = [2, 5, 8, 11];
         var groups = p.texts.map(function (t, gi) {
-            return { at: t.after ? t.after - 1 : AUTO[gi], label: t.label, ps: t.ps, lead: gi === 0 };
+            return { at: t.after ? t.after - 1 : AUTO[gi], label: t.label, ps: t.ps, lead: gi === 0, w: t.w };
         });
         var hasMat = p.mats.length > 0 || !!matNote;
         var mAt = hasMat ? Math.min(p.matAfter ? p.matAfter - 1 : 3, n - 1) : -1;

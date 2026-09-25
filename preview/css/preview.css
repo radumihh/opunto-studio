@@ -65,3 +65,27 @@
 .pv-concepts .pv-gate input:focus { border-color: var(--cx-sig); }
 .pv-concepts .pv-gate button[type="submit"] { color: var(--cx-sig); border-color: var(--cx-line); }
 .pv-concepts .pv-gate .g-err { color: #e0705a; }
+
+/* LONG WORDS. The site's texts are written by hand, so every word fits its
+   column; what a client types may not ("aaaaaaaa…", a pasted URL). A word
+   longer than its column breaks inside the column instead of running out
+   of it. Normal text wraps exactly as before. */
+.pp-open, .pj, .wk-card, .pv-cell, .pv-gate { overflow-wrap: anywhere; }
+.pp-wd, .pp-m, .pj-m { max-width: 100%; }
+.pp-sw-cap { white-space: normal; width: 100%; }
+
+/* TEXT WIDTH, picked in the studio: narrow / medium (the site's own) / wide.
+   Phones keep the site's single column. */
+@media (min-width: 901px) {
+    .pp-text.is-narrow { width: clamp(14rem, 19vw, 22rem); }
+    .pp-text.is-wide   { width: clamp(22rem, 38vw, 44rem); }
+    .pp-text.is-wide .pp-par { max-width: 60ch; }
+
+    .pj-brief.is-narrow    { width: clamp(15rem, 22vw, 26rem); }
+    .pj-brief.is-wide      { width: clamp(24rem, 42vw, 48rem); }
+    .pj-quote.is-narrow    { width: clamp(15rem, 24vw, 28rem); }
+    .pj-quote.is-wide      { width: clamp(24rem, 44vw, 52rem); }
+    .pj-approach.is-narrow { width: clamp(14rem, 19vw, 22rem); }
+    .pj-approach.is-wide   { width: clamp(22rem, 38vw, 44rem); }
+    .pj-approach.is-wide .pj-par { max-width: 62ch; }
+}

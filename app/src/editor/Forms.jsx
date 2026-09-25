@@ -34,6 +34,8 @@ function afterOptions(n, autoLabel, current) {
     return opts;
 }
 
+const WIDTHS = [{ value: 'narrow', label: 'Îngust' }, { value: 'medium', label: 'Mediu' }, { value: 'wide', label: 'Lat' }];
+
 function Row({ children, className }) { return <div className={cn('grid grid-cols-2 gap-3', className)}>{children}</div>; }
 
 function SwitchRow({ label, hint, checked, onChange, id }) {
@@ -129,6 +131,10 @@ export function ArchForm({ p, set, errors }) {
                         </div>
                         <AreaField value={t.body} max={1600} rows={4} placeholder="Ce era pe teren, pentru cine e casa, ce decizie organizează planul…"
                             onChange={v => setText(i, { body: v })} />
+                        <div className="flex items-center gap-2 text-xs text-muted-foreground">
+                            Lățime
+                            <Segmented size="sm" value={t.width || 'medium'} onChange={v => setText(i, { width: v })} options={WIDTHS} />
+                        </div>
                     </Card>
                 ))}
             </Section>
@@ -223,6 +229,9 @@ export function ConceptsForm({ p, set, errors, others }) {
                 <Field label="Ce am făcut" hint="Lista numerotată de sub abordare. Enter adaugă.">
                     <TagInput value={p.scope} onChange={v => upd({ scope: v })} max={8} itemMax={32} placeholder="ex. Concept"
                         suggestions={SCOPES} error={errors.scope} />
+                </Field>
+                <Field label="Lățimea textelor" hint="Pentru „The brief”, „In one line” și „Approach”. Mediu e lățimea de pe site.">
+                    <Segmented value={p.textWidth || 'medium'} onChange={v => upd({ textWidth: v })} options={WIDTHS} />
                 </Field>
             </Section>
 

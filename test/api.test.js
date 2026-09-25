@@ -63,6 +63,16 @@ describe('studio without admin password (local)', () => {
         assert.equal(r.status, 400);
     });
 
+    test('text width: narrow / medium / wide on both sites, nothing else', async () => {
+        const a = await (await fetch(s.base + '/api/projects', json('POST', { site: 'arch' }))).json();
+        const text = w => ({ ...a, texts: [{ heading: 'Context', body: 'x', width: w }] });
+        assert.equal((await fetch(s.base + '/api/projects/' + a.id, json('PUT', text('wide')))).status, 200);
+        assert.equal((await fetch(s.base + '/api/projects/' + a.id, json('PUT', text('huge')))).status, 422);
+        const c = await (await fetch(s.base + '/api/projects', json('POST', { site: 'concepts' }))).json();
+        assert.equal((await fetch(s.base + '/api/projects/' + c.id, json('PUT', { ...c, textWidth: 'narrow' }))).status, 200);
+        assert.equal((await fetch(s.base + '/api/projects/' + c.id, json('PUT', { ...c, textWidth: 'huge' }))).status, 422);
+    });
+
     test('upload: image becomes avif + sm.webp, junk is refused per file', async () => {
         const good = await img(4000, 2500);
         const { status, body } = await upload(s.base, [good, Buffer.from('not an image')]);

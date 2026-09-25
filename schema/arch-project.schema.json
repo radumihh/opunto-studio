@@ -4,86 +4,207 @@
   "title": "Proiect #arch",
   "description": "Un proiect din site-ul de arhitectură. `title` = eticheta din formular, `description` = textul de ajutor. Câmpurile `readOnly` le completează aplicația.",
   "type": "object",
-  "required": ["id", "site", "status", "category", "name", "photos"],
+  "required": [
+    "id",
+    "site",
+    "status",
+    "category",
+    "name",
+    "photos"
+  ],
   "properties": {
-    "id":        { "type": "string", "readOnly": true },
-    "site":      { "const": "arch" },
-    "status":    { "title": "Stare", "enum": ["draft", "published"] },
-    "protected": { "title": "Protejat cu parolă", "type": "boolean", "description": "Vizitatorii văd cardul, dar pagina se deschide doar cu parola comună din Setări." },
-    "order":     { "type": "integer", "minimum": 0, "readOnly": true },
-    "createdAt": { "type": "string", "readOnly": true },
-    "updatedAt": { "type": "string", "readOnly": true },
-
-    "category": { "title": "Categorie", "enum": ["interior-design", "architecture", "real-estate-marketing"] },
-    "name":     { "title": "Nume proiect", "type": "string", "maxLength": 40 },
-
+    "id": {
+      "type": "string",
+      "readOnly": true
+    },
+    "site": {
+      "const": "arch"
+    },
+    "status": {
+      "title": "Stare",
+      "enum": [
+        "draft",
+        "published"
+      ]
+    },
+    "protected": {
+      "title": "Protejat cu parolă",
+      "type": "boolean",
+      "description": "Vizitatorii văd cardul, dar pagina se deschide doar cu parola comună din Setări."
+    },
+    "order": {
+      "type": "integer",
+      "minimum": 0,
+      "readOnly": true
+    },
+    "createdAt": {
+      "type": "string",
+      "readOnly": true
+    },
+    "updatedAt": {
+      "type": "string",
+      "readOnly": true
+    },
+    "category": {
+      "title": "Categorie",
+      "enum": [
+        "interior-design",
+        "architecture",
+        "real-estate-marketing"
+      ]
+    },
+    "name": {
+      "title": "Nume proiect",
+      "type": "string",
+      "maxLength": 40
+    },
     "photos": {
       "title": "Fotografii",
       "description": "În ordinea din pagină. Prima e coperta.",
       "type": "array",
       "maxItems": 40,
-      "items": { "$ref": "photo.schema.json" }
+      "items": {
+        "$ref": "photo.schema.json"
+      }
     },
-
     "card": {
       "title": "Card în listă",
       "type": "object",
       "properties": {
-        "size":  { "title": "Mărime card", "enum": ["wide", "mid", "slim"] },
-        "photo": { "title": "Poza de pe card", "type": "integer", "minimum": 1 }
+        "size": {
+          "title": "Mărime card",
+          "enum": [
+            "wide",
+            "mid",
+            "slim"
+          ]
+        },
+        "photo": {
+          "title": "Poza de pe card",
+          "type": "integer",
+          "minimum": 1
+        }
       },
       "additionalProperties": false
     },
-
-    "inNameList": { "title": "Apare în lista de nume", "type": "boolean" },
-    "listName":   { "title": "Nume scurt în listă", "type": "string", "maxLength": 28, "description": "Forma din lista de nume („Tartasesti.”). Gol = numele proiectului." },
-
+    "inNameList": {
+      "title": "Apare în lista de nume",
+      "type": "boolean"
+    },
+    "listName": {
+      "title": "Nume scurt în listă",
+      "type": "string",
+      "maxLength": 28,
+      "description": "Forma din lista de nume („Tartasesti.”). Gol = numele proiectului."
+    },
     "facts": {
       "title": "Date proiect",
       "type": "array",
       "maxItems": 8,
       "items": {
         "type": "object",
-        "required": ["label", "value"],
+        "required": [
+          "label",
+          "value"
+        ],
         "properties": {
-          "label": { "title": "Etichetă", "type": "string", "maxLength": 24 },
-          "value": { "title": "Valoare",  "type": "string", "maxLength": 32 }
+          "label": {
+            "title": "Etichetă",
+            "type": "string",
+            "maxLength": 24
+          },
+          "value": {
+            "title": "Valoare",
+            "type": "string",
+            "maxLength": 32
+          }
         },
         "additionalProperties": false
       }
     },
-
     "texts": {
       "title": "Texte",
       "type": "array",
       "maxItems": 4,
       "items": {
         "type": "object",
-        "required": ["heading", "body"],
+        "required": [
+          "heading",
+          "body"
+        ],
         "properties": {
-          "heading":    { "title": "Titlu mic", "type": "string", "maxLength": 24 },
-          "body":       { "title": "Text", "type": "string", "maxLength": 1600 },
-          "afterPhoto": { "title": "Apare după poza nr.", "type": ["integer", "null"], "minimum": 1 }
+          "heading": {
+            "title": "Titlu mic",
+            "type": "string",
+            "maxLength": 24
+          },
+          "body": {
+            "title": "Text",
+            "type": "string",
+            "maxLength": 1600
+          },
+          "afterPhoto": {
+            "title": "Apare după poza nr.",
+            "type": [
+              "integer",
+              "null"
+            ],
+            "minimum": 1
+          },
+          "width": {
+            "title": "Lățime",
+            "enum": [
+              "narrow",
+              "medium",
+              "wide"
+            ],
+            "description": "Îngust, mediu (ca pe site) sau lat."
+          }
         },
         "additionalProperties": false
       }
     },
-
     "materials": {
       "title": "Materiale",
       "type": "object",
       "properties": {
-        "note":  { "title": "Notă despre materiale", "type": "string", "maxLength": 240 },
-        "afterPhoto": { "title": "Apare după poza nr.", "type": ["integer", "null"], "minimum": 1 },
+        "note": {
+          "title": "Notă despre materiale",
+          "type": "string",
+          "maxLength": 240
+        },
+        "afterPhoto": {
+          "title": "Apare după poza nr.",
+          "type": [
+            "integer",
+            "null"
+          ],
+          "minimum": 1
+        },
         "items": {
           "type": "array",
           "maxItems": 4,
           "items": {
             "type": "object",
-            "required": ["name"],
+            "required": [
+              "name"
+            ],
             "properties": {
-              "name":  { "title": "Nume material", "type": "string", "maxLength": 28 },
-              "image": { "oneOf": [ { "$ref": "photo.schema.json" }, { "type": "null" } ] }
+              "name": {
+                "title": "Nume material",
+                "type": "string",
+                "maxLength": 28
+              },
+              "image": {
+                "oneOf": [
+                  {
+                    "$ref": "photo.schema.json"
+                  },
+                  {
+                    "type": "null"
+                  }
+                ]
+              }
             },
             "additionalProperties": false
           }
@@ -93,15 +214,31 @@
     }
   },
   "additionalProperties": false,
-
-  "if":   { "properties": { "status": { "const": "published" } } },
-  "then": {
-    "required": ["facts", "texts"],
+  "if": {
     "properties": {
-      "name":   { "minLength": 1 },
-      "photos": { "minItems": 4 },
-      "facts":  { "minItems": 3 },
-      "texts":  { "minItems": 1 }
+      "status": {
+        "const": "published"
+      }
+    }
+  },
+  "then": {
+    "required": [
+      "facts",
+      "texts"
+    ],
+    "properties": {
+      "name": {
+        "minLength": 1
+      },
+      "photos": {
+        "minItems": 4
+      },
+      "facts": {
+        "minItems": 3
+      },
+      "texts": {
+        "minItems": 1
+      }
     }
   }
 }
