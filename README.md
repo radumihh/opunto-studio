@@ -2,6 +2,20 @@
 
 Adminul pentru proiectele de pe site-urile Opunto, **#arch** și **#concepts**. Aici adaugi, editezi, reordonezi și ștergi proiecte. Pozele se optimizează automat. Preview-ul rulează **aceeași pagină de proiect ca y-final**, nu o imitație. Site-ul își ia proiectele de aici prin API-ul public (vezi [integration/](integration/README.md)).
 
+## Aplicația Windows
+
+```bash
+npm install
+npm run dist:win
+```
+
+Rezultatul e `release/Opunto-Studio-Setup-<versiune>.exe`, un installer care conține tot ce trebuie: serverul, interfața, preview-ul, proiectele (`data/db.json`) și pozele (`poze/`). Clientul îl rulează, iar aplicația se instalează fără drepturi de administrator și pornește singură, cu scurtătură pe Desktop.
+
+- **Datele clientului** stau în `Documente\Opunto Studio`: `data\db.json` pentru proiecte, `data\settings.json` pentru parole și `poze\architecture|concepts\<proiect>\1.avif …` pentru poze. La prima pornire folderul se umple cu proiectele și pozele cu care a fost construită aplicația. De atunci e al clientului: o versiune nouă a aplicației și dezinstalarea nu îl ating.
+- **Rulare fără installer, pentru test:** `npm run app`.
+- **În fereastră:** F5 reîncarcă pagina, F12 deschide uneltele de dezvoltator.
+- **Installer nesemnat:** Windows SmartScreen arată la prima rulare „Windows protected your PC”. Clientul apasă „More info”, apoi „Run anyway”.
+
 ## Pornire locală
 
 ```bash
