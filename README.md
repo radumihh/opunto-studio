@@ -16,6 +16,21 @@ Rezultatul e `release/Opunto-Studio-Setup-<versiune>.exe`, un installer care con
 - **În fereastră:** F5 reîncarcă pagina, F12 deschide uneltele de dezvoltator.
 - **Installer nesemnat:** Windows SmartScreen arată la prima rulare „Windows protected your PC”. Clientul apasă „More info”, apoi „Run anyway”.
 
+## Când clientul a terminat portofoliul
+
+În aplicație: **Setări → Exportă portofoliul → Exportă .zip**. Fișierul se salvează implicit pe Desktop, iar la final se deschide folderul cu el selectat. Clientul ți-l trimite prin WeTransfer, Google Drive sau un link OneDrive, pentru că are ~90 MB și nu încape pe email.
+
+Zip-ul are structura repo-ului:
+
+```
+data/db.json      toate proiectele, textele, categoriile (fără parole)
+poze/architecture/<proiect>/1.avif … n.avif   (+ .sm.webp)
+poze/concepts/<proiect>/1.avif …
+CITESTE.txt       câte proiecte și poze conține
+```
+
+Ca să-l folosești, îl dezarhivezi peste folderul `opunto-studio` (înlocuiește `data/db.json` și `poze/`) și pornești `npm run dev`. Pentru y-final, datele sunt aceleași ca în `/api/public/arch` și `/api/public/concepts`.
+
 ## Pornire locală
 
 ```bash

@@ -16,6 +16,7 @@
    and .env.example. */
 import express from 'express';
 import multer from 'multer';
+import { ZipArchive } from 'archiver';
 import path from 'path';
 import crypto from 'crypto';
 import { existsSync, mkdirSync, copyFileSync } from 'fs';
@@ -328,6 +329,48 @@ api.put('/settings/admin', async (req, res) => {
     setSession(req, res);
     res.json({ ok: true });
 });
+/* THE WHOLE PORTFOLIO, to send: one .zip laid out like the repo —
+     data/db.json   every project and the #arch rooms (no passwords)
+     poze/…         every photo they use, in its project's folder
+   Unzipped over an Opunto Studio folder, it is that portfolio. Photos are
+   already compressed, so the zip only stores them. */
+api.get('/export', (req, res, next) => {
+    serial(() => new Promise((resolve) => {
+        const db = structuredClone(store.read());
+        delete db.settings;
+        const files = new Set();
+        for (const ph of images.photosIn([db.projects, db.categories])) {
+            const rel = images.relOf(ph.src);
+            if (rel.startsWith('_incoming/')) continue;
+            files.add(rel); files.add(rel.replace(/\.avif$/, '.sm.webp'));
+        }
+        const count = site => db.projects.filter(p => p.site === site).length;
+        const zip = new ZipArchive({ store: true });
+        res.set('Content-Type', 'application/zip');
+        res.set('Content-Disposition', 'attachment; filename="opunto-portofoliu-' + new Date().toLocaleDateString('sv-SE') + '.zip"');
+        zip.on('warning', e => console.warn('export: ' + e.message));
+        zip.on('error', e => { resolve(); next(e); });
+        res.on('close', resolve);
+        zip.pipe(res);
+        zip.append(JSON.stringify(db, null, 2), { name: 'data/db.json' });
+        for (const rel of [...files].sort()) {
+            const file = path.join(config.uploadsDir, ...rel.split('/'));
+            if (existsSync(file)) zip.file(file, { name: 'poze/' + rel });
+        }
+        zip.append([
+            'Portofoliu Opunto, exportat ' + new Date().toLocaleString('ro-RO'),
+            '',
+            count('arch') + ' proiecte #arch, ' + count('concepts') + ' proiecte #concepts, ' + (files.size / 2) + ' poze.',
+            '',
+            'data/db.json  toate proiectele și textele (JSON)',
+            'poze/         toate pozele, câte un folder pe proiect: poze/architecture/<proiect>/1.avif …',
+            '',
+            'Se dezarhivează peste folderul Opunto Studio (înlocuiește data/db.json și poze/).'
+        ].join('\r\n'), { name: 'CITESTE.txt' });
+        zip.finalize();
+    })).catch(next);
+});
+
 /* the whole database as a file; the photos are in poze/ */
 api.get('/backup', (req, res) => {
     const db = structuredClone(store.read());

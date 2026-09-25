@@ -96,6 +96,12 @@ function open(base) {
         if (input.key === 'F5' || (input.control && input.key.toLowerCase() === 'r')) { win.webContents.reload(); e.preventDefault(); }
         if (input.key === 'F12') { win.webContents.toggleDevTools(); e.preventDefault(); }
     });
+    /* a download (the portfolio export) asks where to save, on the Desktop
+       by default, then shows the file so it can be sent right away */
+    win.webContents.session.on('will-download', (e, item) => {
+        item.setSaveDialogOptions({ title: 'Salvează', defaultPath: path.join(app.getPath('desktop'), item.getFilename()) });
+        item.once('done', (ev, state) => { if (state === 'completed') shell.showItemInFolder(item.getSavePath()); });
+    });
     win.on('closed', () => { win = null; });
     win.loadURL(base);
 }

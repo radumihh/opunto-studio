@@ -180,6 +180,27 @@ describe('studio without admin password (local)', () => {
         assert.equal((await fetch(s.base + '/api/projects/' + copy.id)).status, 404);
     });
 
+    test('export: one zip with data/db.json (no passwords) and every photo in its folder', async () => {
+        const ups = (await upload(s.base, [await img(), await img()])).body.map(clean);
+        const p = await (await fetch(s.base + '/api/projects', json('POST', { site: 'arch' }))).json();
+        await fetch(s.base + '/api/projects/' + p.id, json('PUT', { ...p, name: 'Export Me', photos: ups }));
+        const r = await fetch(s.base + '/api/export');
+        assert.equal(r.status, 200);
+        assert.equal(r.headers.get('content-type'), 'application/zip');
+        const zip = Buffer.from(await r.arrayBuffer());
+        /* the names from the zip's central directory */
+        const names = [];
+        for (let i = zip.indexOf(Buffer.from([0x50, 0x4b, 1, 2])); i >= 0; i = zip.indexOf(Buffer.from([0x50, 0x4b, 1, 2]), i + 4)) {
+            names.push(zip.toString('utf8', i + 46, i + 46 + zip.readUInt16LE(i + 28)));
+        }
+        assert.ok(names.includes('data/db.json'));
+        assert.ok(names.includes('CITESTE.txt'));
+        for (const f of ['1.avif', '1.sm.webp', '2.avif', '2.sm.webp']) assert.ok(names.includes('poze/architecture/export-me/' + f), f);
+        assert.ok(!names.some(n => n.includes('_incoming') || n.includes('settings')));
+        const i = zip.indexOf('"projects"');
+        assert.ok(i > 0 && !zip.includes('"secret"'), 'no settings in the export');
+    });
+
     test('photos taken out of a project are deleted on save', async () => {
         const ups = (await upload(s.base, [await img(), await img()])).body.map(clean);
         const p = await (await fetch(s.base + '/api/projects', json('POST', { site: 'arch' }))).json();

@@ -101,10 +101,10 @@ export default function SettingsPage() {
 
             <Card className="mt-4 flex items-center justify-between gap-4 p-5">
                 <div>
-                    <div className="text-[15px] font-semibold tracking-tight">Backup</div>
-                    <p className="mt-1 text-[13px] text-muted-foreground">Toate proiectele, ca fișier JSON. Pozele sunt în folderul <code className="font-mono text-xs">uploads/</code> de pe server.</p>
+                    <div className="text-[15px] font-semibold tracking-tight">Exportă portofoliul</div>
+                    <p className="mt-1 text-[13px] text-muted-foreground">Un singur fișier .zip cu toate proiectele, textele și pozele. Pe acesta îl trimiți când portofoliul e gata.</p>
                 </div>
-                <Button variant="outline" asChild><a href="/api/backup" download><Download />Descarcă</a></Button>
+                <Button asChild><a href="/api/export" download><Download />Exportă .zip</a></Button>
             </Card>
 
             <Confirm open={clearing} onOpenChange={setClearing} title="Scoți parola?"
