@@ -11,3 +11,4 @@ poze/_incoming/
 data/*.bak
 # old flat layout, moved into poze/ on start
 uploads/
+release/

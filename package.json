@@ -4,13 +4,15 @@
   "private": true,
   "description": "Admin for the Opunto sites (#arch and #concepts): projects, images, live preview.",
   "type": "module",
-  "main": "server.js",
+  "main": "electron/main.js",
   "scripts": {
     "dev": "concurrently -k -n server,app -c blue,magenta \"node --watch-path=server.js --watch-path=lib --watch-path=schema server.js\" \"vite\"",
     "build": "vite build",
     "start": "node server.js",
     "test": "node --test test/api.test.js",
-    "setup": "npm ci && npm run build"
+    "setup": "npm ci && npm run build",
+    "app": "vite build && electron .",
+    "dist:win": "vite build && electron-builder --win"
   },
   "engines": {
     "node": ">=20"
@@ -41,6 +43,8 @@
     "class-variance-authority": "^0.7.1",
     "clsx": "^2.1.1",
     "concurrently": "^10.0.5",
+    "electron": "^44.4.5",
+    "electron-builder": "^26.15.3",
     "lucide-react": "^1.48.0",
     "react": "^18.3.1",
     "react-dom": "^18.3.1",
@@ -49,5 +53,50 @@
     "tailwind-merge": "^3.7.0",
     "tailwindcss": "^4.3.3",
     "vite": "^5.4.21"
+  },
+  "author": "Opunto",
+  "build": {
+    "appId": "ro.opunto.studio",
+    "productName": "Opunto Studio",
+    "copyright": "Opunto",
+    "directories": {
+      "output": "release",
+      "buildResources": "build"
+    },
+    "asar": false,
+    "npmRebuild": false,
+    "files": [
+      "package.json",
+      "server.js",
+      "lib/**",
+      "schema/**",
+      "preview/**",
+      "dist/**",
+      "electron/**",
+      "data/db.json",
+      "poze/**",
+      "!poze/_incoming/**"
+    ],
+    "win": {
+      "target": [
+        {
+          "target": "nsis",
+          "arch": [
+            "x64"
+          ]
+        }
+      ],
+      "icon": "build/icon.png",
+      "artifactName": "Opunto-Studio-Setup-${version}.exe"
+    },
+    "nsis": {
+      "oneClick": true,
+      "perMachine": false,
+      "runAfterFinish": true,
+      "createDesktopShortcut": true,
+      "createStartMenuShortcut": true,
+      "shortcutName": "Opunto Studio",
+      "deleteAppDataOnUninstall": false
+    }
   }
 }
