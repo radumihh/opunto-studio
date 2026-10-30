@@ -102,15 +102,30 @@ describe('studio without admin password (local)', () => {
         assert.equal(r.status, 422);
         const e = await r.json();
         const msgs = e.errors.map(x => x.field);
-        assert.ok(msgs.includes('photos') && msgs.includes('facts') && msgs.includes('texts'), JSON.stringify(e.errors));
+        assert.ok(msgs.includes('photos') && msgs.includes('texts'), JSON.stringify(e.errors));
+        assert.ok(!msgs.includes('facts'), 'project data is no longer asked for');
 
         const ups = (await upload(s.base, await Promise.all([1, 2, 3, 4].map(() => img())))).body.map(clean);
         const full = { ...saved, status: 'published', photos: ups, _base: saved.updatedAt,
-            facts: [{ label: 'Area', value: '240 m²' }, { label: 'Floors', value: 'G+1' }, { label: 'Year', value: '2024' }],
             texts: [{ heading: 'Context', body: 'One.\n\nTwo.', afterPhoto: null }],
             materials: { note: '', afterPhoto: 2, items: [{ name: 'Granite', image: { id: 'ph-granite_tile_04', src: 'https://dl.polyhaven.org/file/ph-assets/Textures/jpg/1k/granite_tile_04/granite_tile_04_diff_1k.jpg', width: 1024, height: 1024, preset: true } }] } };
         r = await fetch(s.base + '/api/projects/' + p.id, json('PUT', full));
         assert.equal(r.status, 200, JSON.stringify(await r.clone().json()));
+    });
+
+    test('materials: up to 8 and a longer note; a 9th or a note over 600 is refused', async () => {
+        const p = await (await fetch(s.base + '/api/projects', json('POST', { site: 'arch' }))).json();
+        const tex = { id: 'ph-granite_tile_04', src: 'https://dl.polyhaven.org/file/ph-assets/Textures/jpg/1k/granite_tile_04/granite_tile_04_diff_1k.jpg', width: 1024, height: 1024, preset: true };
+        const items = n => Array.from({ length: n }, (_, i) => ({ name: 'Parchet stejar natur ' + i, image: tex }));
+        const note = 'Paleta materiala mizeaza pe contrast. '.repeat(15);
+        let r = await fetch(s.base + '/api/projects/' + p.id, json('PUT', { ...p, materials: { note, afterPhoto: null, items: items(8) } }));
+        assert.equal(r.status, 200, JSON.stringify(await r.clone().json()));
+        const saved = await r.json();
+        assert.equal(saved.materials.items.length, 8);
+        r = await fetch(s.base + '/api/projects/' + p.id, json('PUT', { ...saved, materials: { note, afterPhoto: null, items: items(9) }, _base: saved.updatedAt }));
+        assert.equal(r.status, 422);
+        r = await fetch(s.base + '/api/projects/' + p.id, json('PUT', { ...saved, materials: { note: 'x'.repeat(601), afterPhoto: null, items: [] }, _base: saved.updatedAt }));
+        assert.equal(r.status, 422);
     });
 
     test('unknown fields and bad values are refused', async () => {

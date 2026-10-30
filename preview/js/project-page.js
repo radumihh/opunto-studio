@@ -332,11 +332,20 @@
                        g.ps.map(function (t) { return '<p class="pp-par pp-in">' + esc(t) + '</p>'; }).join('') +
                    '</div>';
         }
+        /* ADAPTED: a note up to 240 characters keeps the site's large italic;
+           a longer one is set as body text across the palette, a blank line
+           starting a new paragraph. More than four materials stand in two
+           rows of four. */
         function mat() {
+            var long = matNote.length > 240 || /\n\s*\n/.test(matNote);
+            var note = !matNote ? ''
+                : long ? '<div class="pp-note is-long">' + paras(matNote).map(function (t) {
+                             return '<p class="pp-par pp-in">' + esc(t) + '</p>';
+                         }).join('') + '</div>'
+                : '<p class="pp-note">' + wordsHTML(matNote) + '</p>';
             return '<div class="pp-hang pp-mat" data-enter="mat">' +
-                       '<div><div class="pp-kick pp-in"><span>Material palette</span></div>' +
-                           (matNote ? '<p class="pp-note">' + wordsHTML(matNote) + '</p>' : '') + '</div>' +
-                       '<div class="pp-sws">' + p.mats.map(function (t) {
+                       '<div><div class="pp-kick pp-in"><span>Material palette</span></div>' + note + '</div>' +
+                       '<div class="pp-sws' + (p.mats.length > 4 ? ' is-rows' : '') + '">' + p.mats.map(function (t) {
                            return '<div class="pp-sw">' +
                                       '<div class="pp-frame">' + plateHTML(t.src || BLANK, t.name, !!t.src, true) + '</div>' +
                                       '<div class="pp-sw-cap"><b>' + esc(t.name) + '</b>' +
@@ -359,14 +368,13 @@
         });
         var hasMat = p.mats.length > 0 || !!matNote;
         var mAt = hasMat ? Math.min(p.matAfter ? p.matAfter - 1 : 3, n - 1) : -1;
+        /* ADAPTED: no "Project data" block — the studio dropped it */
         if (!n) {
-            html += spec();
             groups.forEach(function (g) { html += para(g); });
             if (hasMat) html += mat();
         }
         for (var k = 0; k < n; k++) {
             html += fig(k);
-            if (k === 0) html += spec();
             for (var gi = 0; gi < groups.length; gi++) {
                 if (Math.min(groups[gi].at, n - 1) === k) html += para(groups[gi]);
             }

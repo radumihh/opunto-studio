@@ -34,6 +34,13 @@ function afterOptions(n, autoLabel, current) {
     return opts;
 }
 
+/* the palette: up to 8 materials; a note up to MAT_NOTE_SHORT keeps the
+   site's large italic, a longer one is set as body text (the page decides
+   the same way, in preview/js/project-page.js) */
+const MAT_MAX = 8;
+const MAT_NOTE_MAX = 600;
+const MAT_NOTE_SHORT = 240;
+
 const WIDTHS = [{ value: 'narrow', label: 'Îngust' }, { value: 'medium', label: 'Mediu' }, { value: 'wide', label: 'Lat' }];
 
 function Row({ children, className }) { return <div className={cn('grid grid-cols-2 gap-3', className)}>{children}</div>; }
@@ -102,11 +109,6 @@ export function ArchForm({ p, set, errors }) {
                     error={errors.photos} />
             </Section>
 
-            <Section id="facts" title="Date proiect" description="Blocul „Project data” de lângă copertă. Rândul „Photographs” se adaugă singur.">
-                <FactsEditor facts={p.facts} onChange={v => upd({ facts: v })} max={8} labelMax={24} valueMax={32}
-                    labelHint="Area" valueHint="240 m²" error={errors.facts} />
-            </Section>
-
             <Section id="texts" title="Texte" description="Blocurile de text dintre poze. Primul e afișat mai mare. Un rând liber în text începe un paragraf nou."
                 action={texts.length < 4 && (
                     <Button variant="outline" size="sm" onClick={() => upd({ texts: [...texts, { heading: ['Context', 'Approach', 'Detail', 'Notes'][texts.length], body: '', afterPhoto: null }] })}>
@@ -139,8 +141,9 @@ export function ArchForm({ p, set, errors }) {
                 ))}
             </Section>
 
-            <Section id="materials" title="Materiale" description="Paleta de materiale. Fără materiale și fără notă, blocul nu apare în pagină.">
-                <AreaField label="Notă despre materiale" value={mats.note} max={240} rows={2}
+            <Section id="materials" title="Materiale" description="Paleta de materiale, până la 8 (pe două rânduri când sunt mai mult de 4). Fără materiale și fără text, blocul nu apare în pagină.">
+                <AreaField label="Text deasupra materialelor" value={mats.note} max={MAT_NOTE_MAX} rows={(mats.note || '').length > MAT_NOTE_SHORT ? 6 : 3}
+                    hint={'Până la ' + MAT_NOTE_SHORT + ' de caractere apare mare, italic. Mai lung, devine text normal, pe toată lățimea paletei. Un rând liber începe un paragraf nou.'}
                     placeholder="De ce aceste materiale și ce face fiecare." onChange={v => setMats({ note: v })} />
                 <Field label="Poziție în pagină">
                     <Select value={mats.afterPhoto ? String(mats.afterPhoto) : 'auto'} onValueChange={v => setMats({ afterPhoto: v === 'auto' ? null : +v })}
@@ -157,7 +160,7 @@ export function ArchForm({ p, set, errors }) {
                             <Button variant="ghost" size="icon-sm" onClick={() => setMats({ items: mats.items.filter((_, k) => k !== i) })} aria-label="Șterge materialul"><X /></Button>
                         </div>
                     ))}
-                    {(mats.items || []).length < 4 && (
+                    {(mats.items || []).length < MAT_MAX && (
                         <div className="flex flex-wrap items-center gap-2">
                             <Button variant="outline" size="sm" onClick={() => setMats({ items: [...(mats.items || []), { name: '', image: null }] })}>
                                 <Plus />Material
@@ -167,7 +170,7 @@ export function ArchForm({ p, set, errors }) {
                                     <DropdownMenuTrigger asChild><Button variant="ghost" size="sm"><Layers />Din texturile site-ului</Button></DropdownMenuTrigger>
                                     <DropdownMenuContent align="start">
                                         {presets.filter(t => !(mats.items || []).some(m => m.image && m.image.id === t.image.id)).map(t => (
-                                            <DropdownMenuItem key={t.image.id} onSelect={() => setMats({ items: [...(mats.items || []), { name: t.name, image: t.image }].slice(0, 4) })}>
+                                            <DropdownMenuItem key={t.image.id} onSelect={() => setMats({ items: [...(mats.items || []), { name: t.name, image: t.image }].slice(0, MAT_MAX) })}>
                                                 <img src={t.image.src} alt="" className="size-5 rounded object-cover" />{t.name}
                                             </DropdownMenuItem>
                                         ))}

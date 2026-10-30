@@ -6,7 +6,10 @@
 #   sudo ADMIN_PASSWORD='parola-lunga' bash install.sh
 #
 #   ADMIN_PASSWORD  parola de intrare în Studio (doar la prima instalare, min. 8 caractere)
-#   Studio răspunde apoi pe http://<IP-ul VM-ului>, cu proiectele (data/db.json)
+#   DOMAIN          opțional, ex. studio.opunto.ro (cu un record A spre IP-ul VM-ului).
+#                   Fără el, adresa e <ip-cu-liniuțe>.sslip.io: gratuită, fără nimic
+#                   de cumpărat sau configurat, și tot cu HTTPS.
+#   Studio răspunde apoi pe https://<DOMAIN>, cu proiectele (data/db.json)
 #   și pozele (poze/) care vin din repo.
 #
 # Update (aceeași comandă, fără variabile): sudo bash /opt/opunto-studio/deploy/install.sh
@@ -19,6 +22,12 @@ BRANCH="${BRANCH:-main}"
 APP_DIR="${APP_DIR:-/opt/opunto-studio}"
 APP_USER=opunto
 PORT=4100
+
+# the update below replaces this very file; bash reads a script as it runs,
+# so a copy runs instead of the file in the repo
+case "$(realpath "$0" 2>/dev/null)" in
+    "$APP_DIR"/*) self=$(mktemp); cp "$0" "$self"; exec bash "$self" "$@" ;;
+esac
 
 say() { printf '\n\033[1;34m==> %s\033[0m\n' "$*"; }
 die() { printf '\n\033[1;31mEroare: %s\033[0m\n' "$*" >&2; exit 1; }
@@ -36,7 +45,18 @@ say "Actualizez sistemul"
 export DEBIAN_FRONTEND=noninteractive
 apt-get update -y
 apt-get -o Dpkg::Options::=--force-confold upgrade -y
-apt-get install -y ca-certificates curl git nginx ufw build-essential unattended-upgrades
+apt-get install -y ca-certificates curl git nginx ufw build-essential unattended-upgrades certbot python3-certbot-nginx unzip
+
+# a small VM (1 GB, e.g. Google Cloud e2-micro) runs out of memory while
+# building and encoding photos: 2 GB of swap, once
+if ! swapon --show --noheadings | grep -q . && [ "$(awk '/MemTotal/ {print int($2/1024)}' /proc/meminfo)" -lt 1800 ]; then
+    say "Swap 2 GB (VM cu puțină memorie)"
+    [ -f /swapfile ] || fallocate -l 2G /swapfile
+    chmod 600 /swapfile
+    mkswap /swapfile >/dev/null
+    swapon /swapfile
+    grep -q '^/swapfile' /etc/fstab || echo '/swapfile none swap sw 0 0' >> /etc/fstab
+fi
 
 say "Node.js 22"
 if ! command -v node >/dev/null || [ "$(node -p 'process.versions.node.split(".")[0]')" -lt 20 ]; then
@@ -45,9 +65,9 @@ if ! command -v node >/dev/null || [ "$(node -p 'process.versions.node.split("."
 fi
 node -v
 
-say "Firewall: SSH + HTTP"
+say "Firewall: SSH + HTTP + HTTPS"
 ufw allow OpenSSH >/dev/null
-ufw allow 'Nginx HTTP' >/dev/null
+ufw allow 'Nginx Full' >/dev/null
 ufw --force enable
 ufw status | sed 's/^/   /'
 
@@ -97,12 +117,33 @@ systemctl daemon-reload
 systemctl enable opunto-studio >/dev/null
 systemctl restart opunto-studio
 
-say "nginx"
+ip=$(curl -fsS -4 https://ifconfig.me 2>/dev/null || hostname -I | awk '{print $1}')
+# an update keeps the address the server already has
+if [ -z "${DOMAIN:-}" ] && [ -f /etc/nginx/sites-available/opunto-studio ]; then
+    DOMAIN=$(awk '$1 == "server_name" { gsub(";", "", $2); print $2; exit }' /etc/nginx/sites-available/opunto-studio)
+    [ "$DOMAIN" = "_" ] && DOMAIN=""
+fi
+DOMAIN="${DOMAIN:-$(echo "$ip" | tr . -).sslip.io}"
+
+say "nginx + HTTPS ($DOMAIN)"
 if [ "$FIRST" = 1 ] || [ ! -f /etc/nginx/sites-available/opunto-studio ]; then
     cp deploy/nginx.conf /etc/nginx/sites-available/opunto-studio
-    sed -i "s|server_name .*;|server_name _;|" /etc/nginx/sites-available/opunto-studio
     ln -sf /etc/nginx/sites-available/opunto-studio /etc/nginx/sites-enabled/opunto-studio
     rm -f /etc/nginx/sites-enabled/default
+fi
+# certbot adds the HTTPS part to this file and renews it by itself;
+# only a domain without a certificate yet gets one here
+URL="http://$ip"
+if [ -d "/etc/letsencrypt/live/$DOMAIN" ]; then
+    URL="https://$DOMAIN"
+else
+    sed -i "s|server_name .*;|server_name $DOMAIN;|" /etc/nginx/sites-available/opunto-studio
+    nginx -t && systemctl reload nginx
+    if certbot --nginx -d "$DOMAIN" --non-interactive --agree-tos --register-unsafely-without-email --redirect; then
+        URL="https://$DOMAIN"
+    else
+        echo "   Atenție: certificatul HTTPS nu s-a putut obține. Studio merge pe $URL; rulează scriptul din nou mai târziu."
+    fi
 fi
 nginx -t
 systemctl reload nginx
@@ -116,9 +157,8 @@ else
     journalctl -u opunto-studio -n 30 --no-pager
     die "serverul nu răspunde"
 fi
-ip=$(curl -fsS -4 https://ifconfig.me 2>/dev/null || hostname -I | awk '{print $1}')
 echo
-echo "   Gata:  http://$ip   (parola: cea din ADMIN_PASSWORD)"
-echo "   API public pentru y-final: http://$ip/api/public/arch"
+echo "   Gata:  $URL   (parola: cea din ADMIN_PASSWORD)"
+echo "   API public pentru y-final: $URL/api/public/arch"
 echo "   Jurnal: journalctl -u opunto-studio -f"
 echo "   Update: sudo bash $APP_DIR/deploy/install.sh"

@@ -120,7 +120,8 @@
           }
         },
         "additionalProperties": false
-      }
+      },
+      "description": "Nu se mai completează din Studio și nu mai apare în pagină. Datele vechi rămân aici."
     },
     "texts": {
       "title": "Texte",
@@ -171,7 +172,8 @@
         "note": {
           "title": "Notă despre materiale",
           "type": "string",
-          "maxLength": 240
+          "maxLength": 600,
+          "description": "Până la 240 de caractere: textul mare, italic. Mai lung: text normal, deasupra paletei, pe toată lățimea ei. Un rând liber începe un paragraf nou."
         },
         "afterPhoto": {
           "title": "Apare după poza nr.",
@@ -183,7 +185,7 @@
         },
         "items": {
           "type": "array",
-          "maxItems": 4,
+          "maxItems": 8,
           "items": {
             "type": "object",
             "required": [
@@ -223,7 +225,6 @@
   },
   "then": {
     "required": [
-      "facts",
       "texts"
     ],
     "properties": {
@@ -232,9 +233,6 @@
       },
       "photos": {
         "minItems": 4
-      },
-      "facts": {
-        "minItems": 3
       },
       "texts": {
         "minItems": 1

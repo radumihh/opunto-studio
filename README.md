@@ -49,7 +49,18 @@ curl -fsSL https://raw.githubusercontent.com/radumihh/opunto-studio/main/deploy/
 sudo ADMIN_PASSWORD='parola-lunga' bash install.sh
 ```
 
-Scriptul face tot: actualizează sistemul, instalează Node 22, nginx și firewall-ul (SSH, HTTP), creează utilizatorul `opunto`, clonează repo-ul în `/opt/opunto-studio`, face build-ul și pornește serviciul systemd. Proiectele (`data/db.json`) și pozele (`poze/`) sunt în repo, deci vin odată cu `git clone`. La final îți afișează adresa: `http://<IP-ul VM-ului>`.
+Scriptul face tot: actualizează sistemul, instalează Node 22, nginx, certbot și firewall-ul (SSH, HTTP, HTTPS), creează utilizatorul `opunto`, clonează repo-ul în `/opt/opunto-studio`, face build-ul, pornește serviciul systemd și ia un certificat HTTPS gratuit. Proiectele (`data/db.json`) și pozele (`poze/`) sunt în repo, deci vin odată cu `git clone`.
+
+La final îți afișează adresa: `https://<ip-cu-liniuțe>.sslip.io` (ex. `https://49-12-34-56.sslip.io`), fără domeniu de cumpărat. Cu un domeniu al vostru (un record A spre IP-ul VM-ului): `sudo DOMAIN=studio.opunto.ro ADMIN_PASSWORD='…' bash install.sh`.
+
+### Ce au lucrat clienții în aplicația Windows → pe server
+
+1. Fiecare: **Setări → Exportă portofoliul → Exportă .zip** și ți-l trimite. Din acel moment lucrează doar pe server.
+2. Urci zip-urile pe VM (Google Cloud: în fereastra SSH, ⚙ → **Upload file**; ajung în folderul tău de acasă).
+3. Pe VM: `sudo bash /opt/opunto-studio/deploy/import.sh ~/*.zip`. Îți arată proiectele noi, modificate, șterse și ce au modificat amândoi (se păstrează versiunea salvată ultima), apoi te întreabă. La `da` oprește Studio, face o copie în `/var/backups`, unește, repornește.
+4. Pozele se copiază exact cum sunt în zip, fără a doua comprimare.
+
+Importul se face **înainte** ca cineva să lucreze pe server: proiectele de pe server sunt punctul de plecare comun, iar un proiect făcut pe server și absent din zip-uri ar fi socotit șters. Local merge la fel: `npm run import -- a.zip b.zip --dry`.
 
 **Update:** `sudo bash /opt/opunto-studio/deploy/install.sh`. Aduce codul nou și repornește serviciul. Proiectele, pozele și parolele de pe VM rămân cele de pe VM.
 

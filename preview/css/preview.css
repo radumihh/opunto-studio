@@ -89,3 +89,35 @@
     .pj-approach.is-wide   { width: clamp(22rem, 38vw, 44rem); }
     .pj-approach.is-wide .pj-par { max-width: 62ch; }
 }
+
+/* MATERIAL PALETTE, as the studio extends it.
+   A note longer than 240 characters is body text, not the large italic:
+   it runs across the full width of the swatches, above them. More than
+   four materials stand in two rows of four. Squares shrink with the screen's height, so two rows
+   and a long note still fit between the rules. */
+.pp-note.is-long {
+    font-family: inherit;
+    font-style: normal;
+    font-size: inherit;
+    line-height: inherit;
+    letter-spacing: inherit;
+    color: inherit;
+    margin-bottom: clamp(1.6rem, 3.5vh, 2.6rem);
+}
+.pp-note.is-long .pp-par { max-width: none; font-size: clamp(0.95rem, 1.05vw, 1.15rem); }
+.pp-sws.is-rows {
+    display: grid;
+    grid-template-columns: repeat(4, auto);
+    align-items: start;
+    column-gap: clamp(0.7rem, 1.1vw, 1.3rem);
+    row-gap: clamp(1rem, 2.4vh, 1.8rem);
+}
+.pp-sws.is-rows .pp-sw { width: clamp(5.5rem, min(9.5vw, 15vh), 11.5rem); aspect-ratio: auto; }
+.pp-sws.is-rows .pp-sw .pp-frame { height: auto; aspect-ratio: 1; }
+/* the first row's names sit between the rows; the last row stands on the
+   baseline with its names hanging below it, as the site's single row does */
+.pp-sws.is-rows .pp-sw:nth-child(-n+4) .pp-sw-cap { position: static; margin-top: 0.7rem; }
+@media (max-width: 900px) {
+    .pp-sws.is-rows { grid-template-columns: repeat(4, 1fr); column-gap: 3vw; }
+    .pp-sws.is-rows .pp-sw { width: auto; }
+}

@@ -9,6 +9,7 @@ Studio publică proiectele la `/api/public/*`. În y-final se schimbă doar surs
 | `integration/opunto-feed.js` | `js/opunto-feed.js` (nou) |
 | `preview/js/project-page.js` | înlocuiește `js/project-page.js` |
 | stilurile `.pv-gate` din `preview/css/preview.css` | adaugă-le în `css/project-page.css` (ecranul de parolă) |
+| din `preview/css/preview.css`: LONG WORDS, TEXT WIDTH și MATERIAL PALETTE | adaugă-le în `css/project-page.css` (texte lungi, lățimi, până la 8 materiale) |
 
 ## #arch
 
