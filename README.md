@@ -51,7 +51,11 @@ sudo ADMIN_PASSWORD='parola-lunga' bash install.sh
 
 Scriptul face tot: actualizează sistemul, instalează Node 22, nginx, certbot și firewall-ul (SSH, HTTP, HTTPS), creează utilizatorul `opunto`, clonează repo-ul în `/opt/opunto-studio`, face build-ul, pornește serviciul systemd și ia un certificat HTTPS gratuit. Proiectele (`data/db.json`) și pozele (`poze/`) sunt în repo, deci vin odată cu `git clone`.
 
-La final îți afișează adresa: `https://<ip-cu-liniuțe>.sslip.io` (ex. `https://49-12-34-56.sslip.io`), fără domeniu de cumpărat. Cu un domeniu al vostru (un record A spre IP-ul VM-ului): `sudo DOMAIN=studio.opunto.ro ADMIN_PASSWORD='…' bash install.sh`.
+La final îți afișează adresa: `https://<IP-ul VM-ului>`. Certificatul e de la Let's Encrypt, pentru IP, fără domeniu. E valabil 6 zile și certbot îl reînnoiește singur. Dacă nu se poate obține (ex. portul 443 închis), Studio merge pe `http://<IP>`, iar scriptul îți spune asta.
+
+**Cu un domeniu:** un record DNS de tip A, ex. `studio` → IP-ul VM-ului la `opunto.ro`, apoi `sudo -i` și `DOMAIN=studio.opunto.ro bash install.sh` (la prima instalare, și `ADMIN_PASSWORD='…'`). Merge și ca update: certificatul se ia singur și se reînnoiește singur, iar IP-ul duce de atunci la `https://studio.opunto.ro`. Adresele gratuite `*.sslip.io` nu le folosim: operatorii din România le blochează.
+
+Pe Google Cloud, la VM trebuie bifate **Allow HTTP traffic** și **Allow HTTPS traffic**, iar IP-ul extern trebuie făcut static (VPC network → IP addresses → Promote to static).
 
 ### Ce au lucrat clienții în aplicația Windows → pe server
 

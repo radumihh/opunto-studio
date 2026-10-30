@@ -6,11 +6,12 @@
 #   sudo ADMIN_PASSWORD='parola-lunga' bash install.sh
 #
 #   ADMIN_PASSWORD  parola de intrare în Studio (doar la prima instalare, min. 8 caractere)
-#   DOMAIN          opțional, ex. studio.opunto.ro (cu un record A spre IP-ul VM-ului).
-#                   Fără el, adresa e <ip-cu-liniuțe>.sslip.io: gratuită, fără nimic
-#                   de cumpărat sau configurat, și tot cu HTTPS.
-#   Studio răspunde apoi pe https://<DOMAIN>, cu proiectele (data/db.json)
-#   și pozele (poze/) care vin din repo.
+#   DOMAIN          opțional, ex. studio.opunto.ro (cu un record A spre IP-ul VM-ului):
+#                   Studio răspunde pe https://<DOMAIN>, iar IP-ul duce acolo.
+#                   Fără el, Studio răspunde pe https://<IP>, cu un certificat
+#                   Let's Encrypt pentru IP (6 zile, reînnoit automat de certbot).
+#                   (Nu folosim *.sslip.io: operatorii din România îl blochează.)
+#   Proiectele (data/db.json) și pozele (poze/) vin din repo.
 #
 # Update (aceeași comandă, fără variabile): sudo bash /opt/opunto-studio/deploy/install.sh
 #   actualizează sistemul, codul, dependențele și repornește. Proiectele, pozele,
@@ -45,7 +46,7 @@ say "Actualizez sistemul"
 export DEBIAN_FRONTEND=noninteractive
 apt-get update -y
 apt-get -o Dpkg::Options::=--force-confold upgrade -y
-apt-get install -y ca-certificates curl git nginx ufw build-essential unattended-upgrades certbot python3-certbot-nginx unzip
+apt-get install -y ca-certificates curl git nginx ufw build-essential unattended-upgrades snapd unzip
 
 # a small VM (1 GB, e.g. Google Cloud e2-micro) runs out of memory while
 # building and encoding photos: 2 GB of swap, once
@@ -117,32 +118,137 @@ systemctl daemon-reload
 systemctl enable opunto-studio >/dev/null
 systemctl restart opunto-studio
 
-ip=$(curl -fsS -4 https://ifconfig.me 2>/dev/null || hostname -I | awk '{print $1}')
-# an update keeps the address the server already has
-if [ -z "${DOMAIN:-}" ] && [ -f /etc/nginx/sites-available/opunto-studio ]; then
-    DOMAIN=$(awk '$1 == "server_name" { gsub(";", "", $2); print $2; exit }' /etc/nginx/sites-available/opunto-studio)
-    [ "$DOMAIN" = "_" ] && DOMAIN=""
+say "certbot (5.4+, pentru certificate pe IP)"
+# Ubuntu's own certbot is too old for certificates on an IP address; the
+# snap is the one Let's Encrypt recommends and renews itself on a timer
+certbot_ok() {
+    local v; v=$(certbot --version 2>/dev/null | awk '{print $2}')
+    [ -n "$v" ] && [ "$(printf '%s\n' 5.4 "$v" | sort -V | head -1)" = 5.4 ]
+}
+if ! certbot_ok; then
+    apt-get remove -y certbot python3-certbot-nginx >/dev/null 2>&1 || true
+    command -v snap >/dev/null || apt-get install -y snapd
+    snap wait system seed.loaded 2>/dev/null || true
+    snap install --classic certbot
+    ln -sf /snap/bin/certbot /usr/bin/certbot
+    hash -r
 fi
-DOMAIN="${DOMAIN:-$(echo "$ip" | tr . -).sslip.io}"
+certbot --version
 
-say "nginx + HTTPS ($DOMAIN)"
-if [ "$FIRST" = 1 ] || [ ! -f /etc/nginx/sites-available/opunto-studio ]; then
-    cp deploy/nginx.conf /etc/nginx/sites-available/opunto-studio
-    ln -sf /etc/nginx/sites-available/opunto-studio /etc/nginx/sites-enabled/opunto-studio
-    rm -f /etc/nginx/sites-enabled/default
-fi
-# certbot adds the HTTPS part to this file and renews it by itself;
-# only a domain without a certificate yet gets one here
+ip=$(curl -fsS -4 https://ifconfig.me 2>/dev/null || hostname -I | awk '{print $1}')
+CONF=/etc/nginx/sites-available/opunto-studio
+IPCONF=/etc/nginx/conf.d/opunto-studio-ip.conf
+WEBROOT=/var/www/letsencrypt
+mkdir -p "$WEBROOT"
+CUR=""
+[ -f "$CONF" ] && CUR=$(awk '$1 == "server_name" { gsub(";", "", $2); print $2; exit }' "$CONF")
+[ "$CUR" = "_" ] && CUR=""
+# *.sslip.io is blocked by Romanian carriers: a server set up on it goes
+# back to its IP
+case "$CUR" in *.sslip.io) certbot delete --non-interactive --cert-name "$CUR" >/dev/null 2>&1 || true; CUR="" ;; esac
+# an update keeps the address the server already has; DOMAIN=… sets one
+DOMAIN="${DOMAIN:-$CUR}"
+
+PROXY='        proxy_pass http://127.0.0.1:4100;
+        proxy_http_version 1.1;
+        proxy_set_header Host $host;
+        proxy_set_header X-Forwarded-For $proxy_add_x_forwarded_for;
+        proxy_set_header X-Forwarded-Proto $scheme;
+        # AVIF encoding of a large photo takes a few seconds
+        proxy_read_timeout 120s;'
+
 URL="http://$ip"
-if [ -d "/etc/letsencrypt/live/$DOMAIN" ]; then
-    URL="https://$DOMAIN"
+if [ -z "$DOMAIN" ]; then
+    # NO DOMAIN: HTTPS on the IP itself. Let's Encrypt certificates for an
+    # IP last 6 days; certbot's timer renews them and reloads nginx.
+    say "nginx + HTTPS pe IP ($ip)"
+    name="ip-$ip"
+    cert="/etc/letsencrypt/live/$name"
+    ipconf() {
+        if [ -f "$cert/fullchain.pem" ]; then
+            cat > "$CONF" <<EOF
+server {
+    listen 80 default_server;
+    server_name _;
+    location /.well-known/acme-challenge/ { root $WEBROOT; }
+    location / { return 301 https://$ip\$request_uri; }
+}
+server {
+    listen 443 ssl default_server;
+    server_name _;
+    ssl_certificate     $cert/fullchain.pem;
+    ssl_certificate_key $cert/privkey.pem;
+    # photos up to 60 MB each
+    client_max_body_size 64m;
+    location / {
+$PROXY
+    }
+}
+EOF
+        else
+            cat > "$CONF" <<EOF
+server {
+    listen 80 default_server;
+    server_name _;
+    client_max_body_size 64m;
+    location /.well-known/acme-challenge/ { root $WEBROOT; }
+    location / {
+$PROXY
+    }
+}
+EOF
+        fi
+        ln -sf "$CONF" /etc/nginx/sites-enabled/opunto-studio
+        rm -f /etc/nginx/sites-enabled/default "$IPCONF"
+        nginx -t && systemctl reload nginx
+    }
+    ipconf
+    if [ ! -f "$cert/fullchain.pem" ]; then
+        if certbot certonly --non-interactive --agree-tos --register-unsafely-without-email \
+               --preferred-profile shortlived --webroot -w "$WEBROOT" \
+               --ip-address "$ip" --cert-name "$name" --deploy-hook "systemctl reload nginx"; then
+            ipconf
+        else
+            echo "   Atenție: certificatul HTTPS pentru $ip nu s-a putut obține. Studio merge pe http://$ip;"
+            echo "   rulează scriptul din nou mai târziu (Google Cloud: bifează Allow HTTPS traffic)."
+        fi
+    fi
+    [ -f "$cert/fullchain.pem" ] && URL="https://$ip"
 else
-    sed -i "s|server_name .*;|server_name $DOMAIN;|" /etc/nginx/sites-available/opunto-studio
-    nginx -t && systemctl reload nginx
-    if certbot --nginx -d "$DOMAIN" --non-interactive --agree-tos --register-unsafely-without-email --redirect; then
+    # A DOMAIN: certbot's nginx plugin writes the HTTPS part into the
+    # file and renews it; the bare IP leads to the domain
+    say "nginx + HTTPS ($DOMAIN)"
+    for old in /etc/letsencrypt/live/ip-*; do
+        [ -d "$old" ] && certbot delete --non-interactive --cert-name "$(basename "$old")" >/dev/null 2>&1 || true
+    done
+    FRESH=0
+    if [ "$FIRST" = 1 ] || [ ! -f "$CONF" ] || [ "$DOMAIN" != "$CUR" ]; then
+        cp deploy/nginx.conf "$CONF"
+        sed -i "s|server_name .*;|server_name $DOMAIN;|" "$CONF"
+        ln -sf "$CONF" /etc/nginx/sites-enabled/opunto-studio
+        rm -f /etc/nginx/sites-enabled/default
+        FRESH=1
+    fi
+    rm -f "$IPCONF"
+    if [ "$FRESH" = 0 ] && [ -d "/etc/letsencrypt/live/$DOMAIN" ]; then
         URL="https://$DOMAIN"
     else
-        echo "   Atenție: certificatul HTTPS nu s-a putut obține. Studio merge pe $URL; rulează scriptul din nou mai târziu."
+        nginx -t && systemctl reload nginx
+        if certbot --nginx -d "$DOMAIN" --non-interactive --agree-tos --register-unsafely-without-email --redirect --keep-until-expiring; then
+            URL="https://$DOMAIN"
+        else
+            echo "   Atenție: certificatul HTTPS pentru $DOMAIN nu s-a putut obține (recordul DNS arată spre $ip?)."
+            echo "   Rulează scriptul din nou după ce DNS-ul e gata."
+        fi
+    fi
+    if [ "${URL#https://}" != "$URL" ]; then
+        cat > "$IPCONF" <<EOF
+server {
+    listen 80 default_server;
+    server_name _;
+    return 301 https://$DOMAIN\$request_uri;
+}
+EOF
     fi
 fi
 nginx -t
