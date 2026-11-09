@@ -102,7 +102,7 @@ export function ArchForm({ p, set, errors }) {
                 )}
             </Section>
 
-            <Section id="photos" title="Fotografii" description="În ordinea din pagină. Prima e coperta. Din meniul fiecărei poze alegi poza de pe card sau un spațiu mai mare înaintea ei.">
+            <Section id="photos" title="Fotografii" description="În ordinea din pagină; pentru publicare ajunge una. Prima e coperta. Din meniul fiecărei poze alegi poza de pe card sau un spațiu mai mare înaintea ei.">
                 <PhotoManager photos={p.photos || []} setPhotos={photoSetter(p, set)} max={40} allowSpaced
                     cardIndex={((p.card && p.card.photo) || 1) - 1}
                     onCardIndex={i => upd({ card: { ...(p.card || {}), photo: i + 1 } })}
@@ -213,7 +213,7 @@ export function ConceptsForm({ p, set, errors, others }) {
                 </Row>
             </Section>
 
-            <Section id="photos" title="Fotografii" description="Cinci poze, în ordinea din pagină. Prima apare și pe perete. A treia și a cincea sunt afișate mai mici, cu număr.">
+            <Section id="photos" title="Fotografii" description="Până la cinci poze, în ordinea din pagină; pentru publicare ajunge una. Prima apare și pe perete. A treia și a cincea sunt afișate mai mici, cu număr.">
                 <PhotoManager photos={p.photos || []} setPhotos={photoSetter(p, set)} max={5} error={errors.photos} />
             </Section>
 

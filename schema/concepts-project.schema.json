@@ -70,7 +70,7 @@
     },
     "photos": {
       "title": "Fotografii",
-      "description": "5 poze. Prima apare și pe perete.",
+      "description": "Până la 5 poze; pentru publicare ajunge una. Prima apare și pe perete.",
       "type": "array",
       "maxItems": 5,
       "items": {
@@ -182,7 +182,7 @@
         "minLength": 4
       },
       "photos": {
-        "minItems": 5
+        "minItems": 1
       },
       "facts": {
         "minItems": 3

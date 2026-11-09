@@ -105,7 +105,8 @@ describe('studio without admin password (local)', () => {
         assert.ok(msgs.includes('photos') && msgs.includes('texts'), JSON.stringify(e.errors));
         assert.ok(!msgs.includes('facts'), 'project data is no longer asked for');
 
-        const ups = (await upload(s.base, await Promise.all([1, 2, 3, 4].map(() => img())))).body.map(clean);
+        /* one photo is enough to publish */
+        const ups = (await upload(s.base, [await img()])).body.map(clean);
         const full = { ...saved, status: 'published', photos: ups, _base: saved.updatedAt,
             texts: [{ heading: 'Context', body: 'One.\n\nTwo.', afterPhoto: null }],
             materials: { note: '', afterPhoto: 2, items: [{ name: 'Granite', image: { id: 'ph-granite_tile_04', src: 'https://dl.polyhaven.org/file/ph-assets/Textures/jpg/1k/granite_tile_04/granite_tile_04_diff_1k.jpg', width: 1024, height: 1024, preset: true } }] } };
@@ -152,7 +153,7 @@ describe('studio without admin password (local)', () => {
 
     test('concepts: two published projects cannot share a wall slot or both be hero', async () => {
         const ups = (await upload(s.base, await Promise.all([1, 2, 3, 4, 5].map(() => img())))).body.map(clean);
-        const full = (p, extra) => ({ ...p, status: 'published', title: 'T', type: 'Scenography', place: 'Cluj', year: '2024', photos: ups,
+        const full = (p, extra) => ({ ...p, status: 'published', title: 'T', type: 'Scenography', place: 'Cluj', year: '2024', photos: ups.slice(0, 1),
             facts: [{ label: 'a', value: '1' }, { label: 'b', value: '2' }, { label: 'c', value: '3' }],
             summary: 's', story: 'st.', approach: 'ap', scope: ['Concept'], wallSlot: 'B3', wallHero: true, ...extra });
         const a = await (await fetch(s.base + '/api/projects', json('POST', { site: 'concepts' }))).json();

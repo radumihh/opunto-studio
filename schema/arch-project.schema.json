@@ -60,7 +60,7 @@
     },
     "photos": {
       "title": "Fotografii",
-      "description": "În ordinea din pagină. Prima e coperta.",
+      "description": "În ordinea din pagină. Prima e coperta. Pentru publicare ajunge una.",
       "type": "array",
       "maxItems": 40,
       "items": {
@@ -232,7 +232,7 @@
         "minLength": 1
       },
       "photos": {
-        "minItems": 4
+        "minItems": 1
       },
       "texts": {
         "minItems": 1
