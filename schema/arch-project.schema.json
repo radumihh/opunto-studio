@@ -121,7 +121,7 @@
         },
         "additionalProperties": false
       },
-      "description": "Nu se mai completează din Studio și nu mai apare în pagină. Datele vechi rămân aici."
+      "description": "Blocul „Project data” de lângă copertă. Opțional: fără rânduri, blocul nu apare."
     },
     "texts": {
       "title": "Texte",

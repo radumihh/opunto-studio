@@ -368,13 +368,17 @@
         });
         var hasMat = p.mats.length > 0 || !!matNote;
         var mAt = hasMat ? Math.min(p.matAfter ? p.matAfter - 1 : 3, n - 1) : -1;
-        /* ADAPTED: no "Project data" block — the studio dropped it */
+        /* ADAPTED: the "Project data" block is optional — a project with no
+           rows of its own leaves it out */
+        var hasSpec = stats.length > 0;
         if (!n) {
+            if (hasSpec) html += spec();
             groups.forEach(function (g) { html += para(g); });
             if (hasMat) html += mat();
         }
         for (var k = 0; k < n; k++) {
             html += fig(k);
+            if (k === 0 && hasSpec) html += spec();
             for (var gi = 0; gi < groups.length; gi++) {
                 if (Math.min(groups[gi].at, n - 1) === k) html += para(groups[gi]);
             }

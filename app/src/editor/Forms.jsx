@@ -109,6 +109,11 @@ export function ArchForm({ p, set, errors }) {
                     error={errors.photos} />
             </Section>
 
+            <Section id="facts" title="Date proiect" description="Blocul „Project data” de lângă copertă. Rândul „Photographs” se adaugă singur. Opțional: fără rânduri, blocul nu apare.">
+                <FactsEditor facts={p.facts} onChange={v => upd({ facts: v })} max={8} labelMax={24} valueMax={32}
+                    labelHint="Area" valueHint="240 m²" error={errors.facts} />
+            </Section>
+
             <Section id="texts" title="Texte" description="Blocurile de text dintre poze. Primul e afișat mai mare. Un rând liber în text începe un paragraf nou."
                 action={texts.length < 4 && (
                     <Button variant="outline" size="sm" onClick={() => upd({ texts: [...texts, { heading: ['Context', 'Approach', 'Detail', 'Notes'][texts.length], body: '', afterPhoto: null }] })}>
